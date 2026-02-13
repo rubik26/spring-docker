@@ -3,19 +3,18 @@ package com.darpasyan.docker.controller;
 
 import com.darpasyan.docker.model.User;
 import com.darpasyan.docker.service.UserService;
+import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("api/")
+@AllArgsConstructor
 public class UserController {
 
     private final UserService service;
 
-    UserController(UserService service){
-        this.service = service;
-    }
 
     @GetMapping("users")
     public List<User> getUsers(){

@@ -3,6 +3,7 @@ package com.darpasyan.docker.service.impl;
 import com.darpasyan.docker.model.User;
 import com.darpasyan.docker.model.UserPrincipial;
 import com.darpasyan.docker.repo.UserRepo;
+import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -10,13 +11,13 @@ import org.springframework.stereotype.Service;
 
 
 @Service
+@AllArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepo repo;
 
-    CustomUserDetailsService(UserRepo repo){
-        this.repo = repo;
-    }
+
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = repo.findByUsername(username);

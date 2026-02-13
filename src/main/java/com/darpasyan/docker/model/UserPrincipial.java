@@ -1,7 +1,6 @@
 package com.darpasyan.docker.model;
 
 
-import  com.darpasyan.docker.model.User;
 
 import lombok.AllArgsConstructor;
 import org.jspecify.annotations.Nullable;
@@ -13,14 +12,11 @@ import java.util.Collection;
 import java.util.Collections;
 
 
+@AllArgsConstructor
 public class UserPrincipial implements UserDetails {
 
     private final User user;
 
-
-    public UserPrincipial(User user){
-        this.user = user;
-    }
 
 
     public int getId(){
