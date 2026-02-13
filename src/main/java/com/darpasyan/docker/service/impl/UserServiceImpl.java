@@ -5,6 +5,7 @@ import com.darpasyan.docker.model.User;
 import com.darpasyan.docker.model.UserPrincipial;
 import com.darpasyan.docker.repo.UserRepo;
 import com.darpasyan.docker.service.UserService;
+import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepo repo;
@@ -21,10 +23,7 @@ public class UserServiceImpl implements UserService {
 
 
 
-    UserServiceImpl(UserRepo repo, SecurityConfig securityConfig){
-        this.repo = repo;
-        this.securityConfig = securityConfig;
-    }
+
 
 
 
@@ -35,6 +34,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User createUser(User user) {
+
+        if(user.getPassword().length() < 8){
+            throw new RuntimeException("Password should be more than 8");
+        }
         user.setPassword(securityConfig.passwordEncoder().encode(user.getPassword()));
         return repo.save(user);
     }

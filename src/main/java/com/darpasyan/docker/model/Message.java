@@ -2,23 +2,26 @@ package com.darpasyan.docker.model;
 
 
 import jakarta.persistence.*;
-import org.springframework.web.multipart.MultipartFile;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDate;
+
 
 @Entity
-@Table(name = "products")
-public class Product {
+@Table(name = "messages")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class Message {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    private  String name;
-    private  String description;
-    private BigDecimal price;
-    private Date dateOfCreate;
-    private MultipartFile avatar;
+    private  String content;
+    private LocalDate dateOfSend;
+    private boolean isEdited;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
