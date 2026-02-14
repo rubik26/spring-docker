@@ -31,9 +31,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http){
         return http.
+                cors(Customizer.withDefaults()).
                 csrf(csrf -> csrf.disable()).
                 authorizeHttpRequests(request ->
-                        request.requestMatchers("/api/createUser/**", "/hello").
+                        request.requestMatchers("/api/createUser/**").
                                 permitAll().
                                 anyRequest().
                                 authenticated()).
@@ -45,7 +46,8 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider(){
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+        DaoAuthenticationProvider provider =
+                new DaoAuthenticationProvider(userDetailsService);
 
         provider.setPasswordEncoder(passwordEncoder());
 

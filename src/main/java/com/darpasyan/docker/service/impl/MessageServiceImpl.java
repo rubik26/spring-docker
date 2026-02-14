@@ -33,7 +33,8 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public Message createMessage(Message message) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
         UserPrincipial currentUser = (UserPrincipial) authentication.getPrincipal();
         User user = userRepo.findById(currentUser.getId()).orElseThrow(() ->
                 new RuntimeException("User not found"));
@@ -46,7 +47,8 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public Message editMessage(int id, Message message) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
         UserPrincipial currentUser = (UserPrincipial) authentication.getPrincipal();
 
         Message messageForEdit = messageRepo.findById(id).orElseThrow(() ->
@@ -65,7 +67,8 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public void deleteMessage(int id) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
         UserPrincipial currentUser = (UserPrincipial) authentication.getPrincipal();
 
         Message messageForDelete = messageRepo.findById(id).orElseThrow(() ->
