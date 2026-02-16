@@ -1,4 +1,4 @@
-package com.darpasyan.docker.Config;
+package com.darpasyan.docker.config;
 
 
 import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;

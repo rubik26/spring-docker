@@ -1,4 +1,4 @@
-package com.darpasyan.docker.Config;
+package com.darpasyan.docker.config;
 
 
 

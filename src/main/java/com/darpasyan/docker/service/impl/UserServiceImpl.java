@@ -1,8 +1,8 @@
 package com.darpasyan.docker.service.impl;
 
-import com.darpasyan.docker.Config.SecurityConfig;
-import com.darpasyan.docker.model.User;
-import com.darpasyan.docker.model.UserPrincipial;
+import com.darpasyan.docker.config.SecurityConfig;
+import com.darpasyan.docker.model.User.User;
+import com.darpasyan.docker.model.User.UserPrincipial;
 import com.darpasyan.docker.repo.UserRepo;
 import com.darpasyan.docker.service.UserService;
 import lombok.AllArgsConstructor;

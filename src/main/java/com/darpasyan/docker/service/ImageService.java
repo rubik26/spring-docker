@@ -12,4 +12,6 @@ public interface ImageService {
     Image createImage(int messageId, MultipartFile imageFile) throws IOException;
     Image editImage(int id, MultipartFile imageFile) throws IOException;
     void deleteImage(int id);
+
+
 }
