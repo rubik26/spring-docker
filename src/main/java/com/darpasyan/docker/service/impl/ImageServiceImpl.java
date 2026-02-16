@@ -1,10 +1,10 @@
 package com.darpasyan.docker.service.impl;
 
 import com.darpasyan.docker.model.Image;
-import com.darpasyan.docker.model.Message;
-import com.darpasyan.docker.model.UserPrincipial;
+import com.darpasyan.docker.model.Messages.GroupMessage;
+import com.darpasyan.docker.model.User.UserPrincipial;
 import com.darpasyan.docker.repo.ImageRepo;
-import com.darpasyan.docker.repo.MessageRepo;
+import com.darpasyan.docker.repo.GroupMessageRepo;
 import com.darpasyan.docker.service.ImageService;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -22,7 +22,7 @@ public class ImageServiceImpl implements ImageService {
     private final ImageRepo imageRepo;
 
 
-    public final MessageRepo messageRepo;
+    public final GroupMessageRepo groupMessageRepo;
 
 
     @Override
@@ -33,14 +33,14 @@ public class ImageServiceImpl implements ImageService {
     @Override
     public Image createImage(int messageId, MultipartFile imageFile) throws IOException {
 
-        Message message = messageRepo.findById(messageId).orElseThrow(() ->
+        GroupMessage groupMessage = groupMessageRepo.findById(messageId).orElseThrow(() ->
                 new RuntimeException("Message not found"));
 
         Image image = new Image();
         image.setImageName(imageFile.getOriginalFilename());
         image.setImageData(imageFile.getBytes());
         image.setImageType(imageFile.getContentType());
-        image.setMessage(message);
+        image.setMessage(groupMessage);
 
 
         System.out.println("File size: " + imageFile.getSize());

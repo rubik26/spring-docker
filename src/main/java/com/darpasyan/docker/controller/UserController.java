@@ -1,7 +1,7 @@
 package com.darpasyan.docker.controller;
 
 
-import com.darpasyan.docker.model.User;
+import com.darpasyan.docker.model.User.User;
 import com.darpasyan.docker.service.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;

@@ -1,6 +1,6 @@
 package com.darpasyan.docker.service;
 
-import com.darpasyan.docker.model.User;
+import com.darpasyan.docker.model.User.User;
 
 import java.util.List;
 
