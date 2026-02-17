@@ -7,20 +7,20 @@ a simple spring project which implements spring security that wrapped by docker-
 Before run the containers it's necessary to build the project:
 
 #### Step 1
-![first_step](spring-docker/docs/groupMessageImage/first_step.png)
+![first_step](spring/docs/image/first_step.png)
 
 
 #### Step 2
-![second_step](docs/groupMessageImage/second_step.png)
+![second_step](docs/image/second_step.png)
 
 
 
 #### Step 3
-![third_step](docs/groupMessageImage/third_step.png)
+![third_step](docs/image/third_step.png)
 
 
 #### Step 4
-![fourth_step](docs/groupMessageImage/fourth_step.png)
+![fourth_step](docs/image/fourth_step.png)
 
 
 
