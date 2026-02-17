@@ -42,9 +42,10 @@ public class GroupServiceImpl implements GroupService {
                 () -> new RuntimeException("User not found")
         );
 
+
+        group.setParticipants(Set.of(user));
         group.setAdmin(user);
         group.setDateOfCreate(LocalDate.now());
-        group.setParticipants(Set.of(user));
 
         return groupRepo.save(group);
     }
@@ -114,9 +115,7 @@ public class GroupServiceImpl implements GroupService {
             throw new RuntimeException("Access denied");
         }
 
-
         groupRepo.delete(groupForDelete);
-
     }
 
     @Override
