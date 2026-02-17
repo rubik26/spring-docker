@@ -15,6 +15,8 @@ import {
   Pencil,
   CheckCheck,
   Image as ImageIcon,
+  Reply,
+  CornerDownRight,
 } from "lucide-react";
 
 interface MessageImage {
@@ -33,6 +35,36 @@ interface Message {
   user?: { id: number; username: string };
   images?: MessageImage[];
   isOwn?: boolean;
+}
+
+// Reply encoding format embedded in content:
+// >>reply:messageId:username:snippet<< actual message content
+const REPLY_REGEX = /^>>reply:(\d+):([^:]*):(.*)<<\n?([\s\S]*)$/;
+
+function parseReply(content: string): {
+  replyToId: number;
+  replyToUser: string;
+  replySnippet: string;
+  actualContent: string;
+} | null {
+  const match = content.match(REPLY_REGEX);
+  if (!match) return null;
+  return {
+    replyToId: parseInt(match[1], 10),
+    replyToUser: match[2],
+    replySnippet: match[3],
+    actualContent: match[4] || "",
+  };
+}
+
+export function encodeReply(
+  replyToId: number,
+  replyToUser: string,
+  replySnippet: string,
+  content: string
+): string {
+  const snippet = replySnippet.slice(0, 80).replace(/\n/g, " ");
+  return `>>reply:${replyToId}:${replyToUser}:${snippet}<<\n${content}`;
 }
 
 interface ChatViewProps {
@@ -65,6 +97,7 @@ export function ChatView({
   const [editContent, setEditContent] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -76,6 +109,13 @@ export function ChatView({
 
   useEffect(() => {
     inputRef.current?.focus();
+  }, [chatId]);
+
+  // Clear reply when chat changes
+  useEffect(() => {
+    setReplyingTo(null);
+    setEditingId(null);
+    setEditContent("");
   }, [chatId]);
 
   useEffect(() => {
@@ -90,9 +130,28 @@ export function ChatView({
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() || selectedFile) {
-      onSendMessage(input.trim(), selectedFile || undefined);
+      let content = input.trim();
+      if (replyingTo) {
+        const replyUser =
+          replyingTo.isOwn
+            ? currentUsername
+            : replyingTo.user?.username || chatName;
+        // Get clean content (strip any nested reply prefix from the original)
+        const parsed = parseReply(replyingTo.content);
+        const originalText = parsed
+          ? parsed.actualContent
+          : replyingTo.content;
+        content = encodeReply(
+          replyingTo.id,
+          replyUser,
+          originalText,
+          content
+        );
+      }
+      onSendMessage(content, selectedFile || undefined);
       setInput("");
       setSelectedFile(null);
+      setReplyingTo(null);
     }
   };
 
@@ -110,9 +169,22 @@ export function ChatView({
     setSelectedFile(null);
   };
 
+  const handleReply = (msg: Message) => {
+    setReplyingTo(msg);
+    setEditingId(null);
+    inputRef.current?.focus();
+  };
+
+  const cancelReply = () => {
+    setReplyingTo(null);
+  };
+
   const startEdit = (msg: Message) => {
     setEditingId(msg.id);
-    setEditContent(msg.content);
+    // When editing, use only the actual content (strip reply prefix)
+    const parsed = parseReply(msg.content);
+    setEditContent(parsed ? parsed.actualContent : msg.content);
+    setReplyingTo(null);
   };
 
   const cancelEdit = () => {
@@ -122,8 +194,31 @@ export function ChatView({
 
   const confirmEdit = () => {
     if (editingId !== null && editContent.trim()) {
-      onEditMessage(editingId, editContent.trim());
+      // Preserve existing reply prefix if present
+      const original = messages.find((m) => m.id === editingId);
+      const parsed = original ? parseReply(original.content) : null;
+      let newContent = editContent.trim();
+      if (parsed) {
+        newContent = encodeReply(
+          parsed.replyToId,
+          parsed.replyToUser,
+          parsed.replySnippet,
+          newContent
+        );
+      }
+      onEditMessage(editingId, newContent);
       cancelEdit();
+    }
+  };
+
+  const scrollToMessage = (messageId: number) => {
+    const el = document.getElementById(`msg-${messageId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-primary/40");
+      setTimeout(() => {
+        el.classList.remove("ring-2", "ring-primary/40");
+      }, 1500);
     }
   };
 
@@ -235,12 +330,17 @@ export function ChatView({
               const isOwn =
                 msg.isOwn ?? msg.user?.username === currentUsername;
               const isEditing = editingId === msg.id;
+              const replyData = parseReply(msg.content);
+              const displayContent = replyData
+                ? replyData.actualContent
+                : msg.content;
 
               return (
                 <div
                   key={msg.id}
+                  id={`msg-${msg.id}`}
                   className={cn(
-                    "group mb-3 flex",
+                    "group mb-3 flex transition-all duration-300 rounded-lg",
                     isOwn ? "justify-end" : "justify-start"
                   )}
                 >
@@ -309,6 +409,53 @@ export function ChatView({
                         </div>
                       ) : (
                         <>
+                          {/* Reply quote block */}
+                          {replyData && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                scrollToMessage(replyData.replyToId)
+                              }
+                              className={cn(
+                                "mb-2 flex w-full items-start gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors",
+                                isOwn
+                                  ? "bg-primary-foreground/15 hover:bg-primary-foreground/25"
+                                  : "bg-muted/60 hover:bg-muted"
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "mt-0.5 h-full w-0.5 flex-shrink-0 self-stretch rounded-full",
+                                  isOwn
+                                    ? "bg-primary-foreground/50"
+                                    : "bg-primary/60"
+                                )}
+                              />
+                              <div className="flex flex-col gap-0.5 overflow-hidden">
+                                <span
+                                  className={cn(
+                                    "text-[11px] font-semibold",
+                                    isOwn
+                                      ? "text-primary-foreground/80"
+                                      : "text-primary/80"
+                                  )}
+                                >
+                                  {replyData.replyToUser}
+                                </span>
+                                <span
+                                  className={cn(
+                                    "truncate text-xs",
+                                    isOwn
+                                      ? "text-primary-foreground/60"
+                                      : "text-muted-foreground"
+                                  )}
+                                >
+                                  {replyData.replySnippet || "Image"}
+                                </span>
+                              </div>
+                            </button>
+                          )}
+
                           {/* Images */}
                           {msg.images &&
                             msg.images.length > 0 &&
@@ -330,31 +477,50 @@ export function ChatView({
                                 />
                               </button>
                             ))}
-                          {msg.content && (
+                          {displayContent && (
                             <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                              {msg.content}
+                              {displayContent}
                             </p>
                           )}
                         </>
                       )}
 
                       {/* Actions */}
-                      {isOwn && !isEditing && (
-                        <div className="absolute -top-3 right-0 hidden items-center gap-0.5 rounded-md border border-border bg-card p-0.5 shadow-sm group-hover:flex">
+                      {!isEditing && (
+                        <div
+                          className={cn(
+                            "absolute -top-3 hidden items-center gap-0.5 rounded-md border border-border bg-card p-0.5 shadow-sm group-hover:flex",
+                            isOwn ? "right-0" : "left-0"
+                          )}
+                        >
                           <button
-                            onClick={() => startEdit(msg)}
+                            onClick={() => handleReply(msg)}
                             className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary"
-                            aria-label="Edit message"
+                            aria-label="Reply to message"
+                            title="Reply"
                           >
-                            <Edit3 className="h-3 w-3" />
+                            <Reply className="h-3 w-3" />
                           </button>
-                          <button
-                            onClick={() => onDeleteMessage(msg.id)}
-                            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-destructive hover:bg-secondary"
-                            aria-label="Delete message"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
+                          {isOwn && (
+                            <>
+                              <button
+                                onClick={() => startEdit(msg)}
+                                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary"
+                                aria-label="Edit message"
+                                title="Edit"
+                              >
+                                <Edit3 className="h-3 w-3" />
+                              </button>
+                              <button
+                                onClick={() => onDeleteMessage(msg.id)}
+                                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-destructive hover:bg-secondary"
+                                aria-label="Delete message"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
@@ -416,6 +582,39 @@ export function ChatView({
             className="max-h-[85vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           />
+        </div>
+      )}
+
+      {/* Reply preview bar */}
+      {replyingTo && (
+        <div className="flex items-center gap-3 border-t border-border bg-card px-4 py-2.5">
+          <CornerDownRight className="h-4 w-4 flex-shrink-0 text-primary" />
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <div className="h-8 w-0.5 flex-shrink-0 rounded-full bg-primary" />
+            <div className="flex min-w-0 flex-col">
+              <span className="text-xs font-semibold text-primary">
+                {replyingTo.isOwn
+                  ? "You"
+                  : replyingTo.user?.username || chatName}
+              </span>
+              <span className="truncate text-xs text-muted-foreground">
+                {(() => {
+                  const parsed = parseReply(replyingTo.content);
+                  const text = parsed
+                    ? parsed.actualContent
+                    : replyingTo.content;
+                  return text || "Image";
+                })()}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={cancelReply}
+            className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary"
+            aria-label="Cancel reply"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
@@ -482,7 +681,9 @@ export function ChatView({
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Type a message..."
+          placeholder={
+            replyingTo ? "Type your reply..." : "Type a message..."
+          }
           className="h-10 flex-1 rounded-lg border border-input bg-card px-3 text-sm text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
         <button
