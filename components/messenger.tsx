@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import useSWR, { mutate } from "swr";
 import { useAuth } from "@/lib/auth-context";
 import {
   directApi,
   directMessageApi,
+  directMessageImageApi,
   groupApi,
   groupMessageApi,
+  groupMessageImageApi,
   userApi,
   type Direct,
   type Group,
@@ -26,6 +28,13 @@ export function Messenger() {
     id: number;
   } | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Maps directId -> other user's username
+  const [directNameMap, setDirectNameMap] = useState<Record<number, string>>(
+    {}
+  );
+  // Track who created each direct so we can resolve the other user
+  const directCreationRef = useRef<Record<number, number>>({});
 
   // Fetch data
   const { data: users = [] } = useSWR<User[]>("users", () =>
@@ -49,6 +58,108 @@ export function Messenger() {
     () => groupMessageApi.getMessages(activeChat!.id)
   );
 
+  // Resolve usernames for direct chats by fetching messages per user
+  useEffect(() => {
+    if (!username || directs.length === 0 || users.length === 0) return;
+
+    const resolveNames = async () => {
+      const newMap: Record<number, string> = { ...directNameMap };
+
+      for (const direct of directs) {
+        if (newMap[direct.id]) continue;
+
+        // Check if we created this direct and know the recipient
+        const recipientId = directCreationRef.current[direct.id];
+        if (recipientId) {
+          const recipientUser = users.find((u) => u.id === recipientId);
+          if (recipientUser) {
+            newMap[direct.id] = recipientUser.username;
+            continue;
+          }
+        }
+
+        // Try each user to find who else is in this conversation
+        for (const user of users) {
+          if (user.username === username) continue;
+          try {
+            const msgs = await directMessageApi.getMessagesByUsername(
+              direct.id,
+              user.username
+            );
+            if (msgs && msgs.length > 0) {
+              newMap[direct.id] = user.username;
+              break;
+            }
+          } catch {
+            // user not in this direct, skip
+          }
+        }
+
+        // Also try checking own messages endpoint to confirm this is our direct
+        if (!newMap[direct.id]) {
+          try {
+            const myMsgs = await directMessageApi.getMessagesByUsername(
+              direct.id,
+              username
+            );
+            // We got access, so we're in this direct. Other user is unknown from here
+            // Try all remaining users more aggressively
+            if (myMsgs !== undefined) {
+              for (const user of users) {
+                if (user.username === username) continue;
+                if (newMap[direct.id]) break;
+                try {
+                  await directMessageApi.getMessagesByUsername(
+                    direct.id,
+                    user.username
+                  );
+                  // If this doesn't throw, user has access - they might be the other party
+                  newMap[direct.id] = user.username;
+                } catch {
+                  // not this user
+                }
+              }
+            }
+          } catch {
+            // skip
+          }
+        }
+      }
+
+      setDirectNameMap(newMap);
+    };
+
+    resolveNames();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [directs, users, username]);
+
+  // Figure out which messages belong to the current user in a direct
+  // Since DirectMessage.user is @JsonIgnore, we fetch per-username to tag ownership
+  const [ownMessageIds, setOwnMessageIds] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    if (
+      !activeChat ||
+      activeChat.type !== "direct" ||
+      !username
+    )
+      return;
+
+    const fetchOwnership = async () => {
+      try {
+        const myMsgs = await directMessageApi.getMessagesByUsername(
+          activeChat.id,
+          username
+        );
+        setOwnMessageIds(new Set(myMsgs.map((m) => m.id)));
+      } catch {
+        setOwnMessageIds(new Set());
+      }
+    };
+
+    fetchOwnership();
+  }, [activeChat, username, directMessages]);
+
   // Polling for new messages
   useEffect(() => {
     if (!activeChat) return;
@@ -65,6 +176,7 @@ export function Messenger() {
   const handleSelectChat = useCallback(
     (type: "direct" | "group", id: number) => {
       setActiveChat({ type, id });
+      setOwnMessageIds(new Set());
     },
     []
   );
@@ -73,13 +185,22 @@ export function Messenger() {
     async (userId: number) => {
       try {
         const direct = await directApi.createDirect(userId, {});
+        // Store the recipient so we can resolve the name
+        directCreationRef.current[direct.id] = userId;
+        const recipientUser = users.find((u) => u.id === userId);
+        if (recipientUser) {
+          setDirectNameMap((prev) => ({
+            ...prev,
+            [direct.id]: recipientUser.username,
+          }));
+        }
         await mutate("directs");
         setActiveChat({ type: "direct", id: direct.id });
       } catch (err) {
         console.error("Failed to create direct:", err);
       }
     },
-    []
+    [users]
   );
 
   const handleCreateGroup = useCallback(
@@ -96,14 +217,24 @@ export function Messenger() {
   );
 
   const handleSendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, imageFile?: File) => {
       if (!activeChat) return;
       try {
         if (activeChat.type === "direct") {
-          await directMessageApi.createMessage(activeChat.id, { content });
+          const msg = await directMessageApi.createMessage(activeChat.id, {
+            content: content || " ",
+          });
+          if (imageFile) {
+            await directMessageImageApi.uploadImage(msg.id, imageFile);
+          }
           await mutate(`direct-${activeChat.id}-messages`);
         } else {
-          await groupMessageApi.createMessage(activeChat.id, { content });
+          const msg = await groupMessageApi.createMessage(activeChat.id, {
+            content: content || " ",
+          });
+          if (imageFile) {
+            await groupMessageImageApi.uploadImage(msg.id, imageFile);
+          }
           await mutate(`group-${activeChat.id}-messages`);
         }
       } catch (err) {
@@ -149,13 +280,34 @@ export function Messenger() {
     [activeChat]
   );
 
-  const messages =
-    activeChat?.type === "direct" ? directMessages : groupMessages;
+  // Enrich messages with ownership and images info
+  const enrichedMessages = (() => {
+    if (!activeChat) return [];
+
+    if (activeChat.type === "direct") {
+      return directMessages.map((msg) => ({
+        ...msg,
+        isOwn: ownMessageIds.has(msg.id),
+        user: ownMessageIds.has(msg.id)
+          ? { id: 0, username: username || "" }
+          : {
+              id: 0,
+              username:
+                directNameMap[activeChat.id] ||
+                `User`,
+            },
+      }));
+    }
+
+    // Group messages already have user data
+    return groupMessages;
+  })();
 
   const chatName = activeChat
     ? activeChat.type === "direct"
-      ? `Direct #${activeChat.id}`
-      : groups.find((g) => g.id === activeChat.id)?.name || `Group #${activeChat.id}`
+      ? directNameMap[activeChat.id] || "Loading..."
+      : groups.find((g) => g.id === activeChat.id)?.name ||
+        `Group #${activeChat.id}`
     : "";
 
   return (
@@ -171,13 +323,14 @@ export function Messenger() {
         currentUsername={username || ""}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        directNameMap={directNameMap}
       />
       {activeChat ? (
         <ChatView
           type={activeChat.type}
           chatId={activeChat.id}
           chatName={chatName}
-          messages={messages}
+          messages={enrichedMessages}
           currentUsername={username || ""}
           onSendMessage={handleSendMessage}
           onEditMessage={handleEditMessage}

@@ -186,6 +186,56 @@ export const groupMessageApi = {
     request<void>(`/deleteGroupMessage/${id}`, { method: "DELETE" }),
 };
 
+// Direct Message Images
+export interface DirectMessageImage {
+  id: number;
+  imageName: string;
+  imageData: string; // base64
+  imageType: string;
+}
+
+export const directMessageImageApi = {
+  getImages: () => request<DirectMessageImage[]>("/directImages"),
+  uploadImage: async (messageId: number, file: File) => {
+    const formData = new FormData();
+    formData.append("imageFile", file);
+    const res = await fetch(`${API_BASE}/uploadDirectImage/${messageId}`, {
+      method: "POST",
+      headers: { ...getAuthHeaders() },
+      body: formData,
+    });
+    if (!res.ok) throw new Error("Upload failed");
+    return res.json() as Promise<DirectMessageImage>;
+  },
+  deleteImage: (id: number) =>
+    request<void>(`/deleteDirectImage/${id}`, { method: "DELETE" }),
+};
+
+// Group Message Images
+export interface GroupMessageImage {
+  id: number;
+  imageName: string;
+  imageData: string; // base64
+  imageType: string;
+}
+
+export const groupMessageImageApi = {
+  getImages: () => request<GroupMessageImage[]>("/groupimages"),
+  uploadImage: async (messageId: number, file: File) => {
+    const formData = new FormData();
+    formData.append("imageFile", file);
+    const res = await fetch(`${API_BASE}/uploadGroupImage/${messageId}`, {
+      method: "POST",
+      headers: { ...getAuthHeaders() },
+      body: formData,
+    });
+    if (!res.ok) throw new Error("Upload failed");
+    return res.json() as Promise<GroupMessageImage>;
+  },
+  deleteImage: (id: number) =>
+    request<void>(`/deleteGroupImage/${id}`, { method: "DELETE" }),
+};
+
 // SWR fetcher with auth
 export const fetcher = async (url: string) => {
   const res = await fetch(url, {

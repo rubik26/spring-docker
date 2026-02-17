@@ -25,6 +25,7 @@ interface SidebarProps {
   currentUsername: string;
   collapsed: boolean;
   onToggleCollapse: () => void;
+  directNameMap: Record<number, string>;
 }
 
 export function Sidebar({
@@ -38,6 +39,7 @@ export function Sidebar({
   currentUsername,
   collapsed,
   onToggleCollapse,
+  directNameMap,
 }: SidebarProps) {
   const { logout } = useAuth();
   const [tab, setTab] = useState<"directs" | "groups">("directs");
@@ -227,31 +229,39 @@ export function Sidebar({
               </div>
             )}
 
-            {directs.map((direct) => (
-              <button
-                key={direct.id}
-                onClick={() => onSelectChat("direct", direct.id)}
-                className={cn(
-                  "flex w-full items-center gap-3 px-3 py-2.5 transition-colors",
-                  activeChat?.type === "direct" &&
-                    activeChat.id === direct.id
-                    ? "bg-secondary"
-                    : "hover:bg-secondary/50"
-                )}
-              >
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-sm font-medium text-accent-foreground">
-                  D
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-sm font-medium text-foreground">
-                    {"Direct #"}{direct.id}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {direct.dateOfStart || "Active"}
-                  </span>
-                </div>
-              </button>
-            ))}
+            {directs.map((direct) => {
+              const otherUsername = directNameMap[direct.id];
+              const displayName = otherUsername || `Direct #${direct.id}`;
+              const initial = otherUsername
+                ? otherUsername[0]?.toUpperCase()
+                : "?";
+
+              return (
+                <button
+                  key={direct.id}
+                  onClick={() => onSelectChat("direct", direct.id)}
+                  className={cn(
+                    "flex w-full items-center gap-3 px-3 py-2.5 transition-colors",
+                    activeChat?.type === "direct" &&
+                      activeChat.id === direct.id
+                      ? "bg-secondary"
+                      : "hover:bg-secondary/50"
+                  )}
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
+                    {initial}
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-medium text-foreground">
+                      {displayName}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {direct.dateOfStart || "Active"}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
 
             {directs.length === 0 && !showNewDirect && (
               <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">

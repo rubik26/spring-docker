@@ -11,7 +11,18 @@ import {
   MessageCircle,
   Hash,
   Menu,
+  Paperclip,
+  Pencil,
+  CheckCheck,
+  Image as ImageIcon,
 } from "lucide-react";
+
+interface MessageImage {
+  id: number;
+  imageName: string;
+  imageData: string;
+  imageType: string;
+}
 
 interface Message {
   id: number;
@@ -20,6 +31,8 @@ interface Message {
   edited: boolean;
   watched?: boolean;
   user?: { id: number; username: string };
+  images?: MessageImage[];
+  isOwn?: boolean;
 }
 
 interface ChatViewProps {
@@ -28,7 +41,7 @@ interface ChatViewProps {
   chatName: string;
   messages: Message[];
   currentUsername: string;
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, imageFile?: File) => void;
   onEditMessage: (id: number, content: string) => void;
   onDeleteMessage: (id: number) => void;
   onToggleSidebar: () => void;
@@ -50,8 +63,12 @@ export function ChatView({
   const [input, setInput] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [expandedImage, setExpandedImage] = useState<string | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -61,12 +78,36 @@ export function ChatView({
     inputRef.current?.focus();
   }, [chatId]);
 
+  useEffect(() => {
+    if (selectedFile) {
+      const url = URL.createObjectURL(selectedFile);
+      setFilePreview(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setFilePreview(null);
+  }, [selectedFile]);
+
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (input.trim()) {
-      onSendMessage(input.trim());
+    if (input.trim() || selectedFile) {
+      onSendMessage(input.trim(), selectedFile || undefined);
       setInput("");
+      setSelectedFile(null);
     }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      setSelectedFile(file);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
   };
 
   const startEdit = (msg: Message) => {
@@ -90,7 +131,10 @@ export function ChatView({
     if (!dateStr) return "";
     try {
       const date = new Date(dateStr);
-      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     } catch {
       return "";
     }
@@ -123,6 +167,8 @@ export function ChatView({
     }
   }
 
+  const chatInitial = chatName?.[0]?.toUpperCase() || "?";
+
   return (
     <div className="flex flex-1 flex-col bg-background">
       {/* Chat Header */}
@@ -136,12 +182,15 @@ export function ChatView({
             <Menu className="h-5 w-5" />
           </button>
         )}
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-sm font-medium text-secondary-foreground">
-          {type === "direct" ? (
-            <MessageCircle className="h-4 w-4" />
-          ) : (
-            <Hash className="h-4 w-4" />
+        <div
+          className={cn(
+            "flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold",
+            type === "direct"
+              ? "bg-primary/15 text-primary"
+              : "bg-secondary text-secondary-foreground"
           )}
+        >
+          {type === "direct" ? chatInitial : <Hash className="h-4 w-4" />}
         </div>
         <div className="flex flex-col">
           <span className="text-sm font-semibold text-foreground">
@@ -183,27 +232,42 @@ export function ChatView({
               </div>
             )}
             {group.messages.map((msg) => {
-              const isOwn = msg.user?.username === currentUsername;
+              const isOwn =
+                msg.isOwn ?? msg.user?.username === currentUsername;
               const isEditing = editingId === msg.id;
 
               return (
                 <div
                   key={msg.id}
                   className={cn(
-                    "group mb-2 flex",
+                    "group mb-3 flex",
                     isOwn ? "justify-end" : "justify-start"
                   )}
                 >
+                  {/* Avatar for other user */}
+                  {!isOwn && (
+                    <div className="mr-2 mt-5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
+                      {msg.user?.username?.[0]?.toUpperCase() ||
+                        chatName?.[0]?.toUpperCase() ||
+                        "?"}
+                    </div>
+                  )}
+
                   <div
                     className={cn(
                       "flex max-w-[70%] flex-col gap-1",
                       isOwn ? "items-end" : "items-start"
                     )}
                   >
-                    {/* Username */}
-                    {!isOwn && msg.user && (
+                    {/* Username label */}
+                    {!isOwn && (
+                      <span className="px-1 text-xs font-medium text-primary">
+                        {msg.user?.username || chatName}
+                      </span>
+                    )}
+                    {isOwn && (
                       <span className="px-1 text-xs font-medium text-muted-foreground">
-                        {msg.user.username}
+                        You
                       </span>
                     )}
 
@@ -211,8 +275,8 @@ export function ChatView({
                       className={cn(
                         "relative rounded-2xl px-3.5 py-2",
                         isOwn
-                          ? "bg-primary text-primary-foreground rounded-br-md"
-                          : "bg-card text-card-foreground border border-border rounded-bl-md"
+                          ? "bg-primary text-primary-foreground rounded-br-sm"
+                          : "bg-card text-card-foreground border border-border rounded-bl-sm"
                       )}
                     >
                       {isEditing ? (
@@ -244,9 +308,34 @@ export function ChatView({
                           </button>
                         </div>
                       ) : (
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                          {msg.content}
-                        </p>
+                        <>
+                          {/* Images */}
+                          {msg.images &&
+                            msg.images.length > 0 &&
+                            msg.images.map((img) => (
+                              <button
+                                key={img.id}
+                                type="button"
+                                onClick={() =>
+                                  setExpandedImage(
+                                    `data:${img.imageType};base64,${img.imageData}`
+                                  )
+                                }
+                                className="mb-1.5 block overflow-hidden rounded-lg"
+                              >
+                                <img
+                                  src={`data:${img.imageType};base64,${img.imageData}`}
+                                  alt={img.imageName}
+                                  className="max-h-48 max-w-full rounded-lg object-cover"
+                                />
+                              </button>
+                            ))}
+                          {msg.content && (
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                              {msg.content}
+                            </p>
+                          )}
+                        </>
                       )}
 
                       {/* Actions */}
@@ -270,14 +359,30 @@ export function ChatView({
                       )}
                     </div>
 
-                    {/* Meta */}
+                    {/* Meta row: time + edited icon + watched icon */}
                     <div className="flex items-center gap-1.5 px-1">
                       <span className="text-[10px] text-muted-foreground">
                         {formatTime(msg.dateOfSend)}
                       </span>
                       {msg.edited && (
-                        <span className="text-[10px] text-muted-foreground">
-                          (edited)
+                        <span
+                          title="Edited"
+                          className="flex items-center text-muted-foreground"
+                        >
+                          <Pencil className="h-2.5 w-2.5" />
+                        </span>
+                      )}
+                      {isOwn && type === "direct" && (
+                        <span
+                          title={msg.watched ? "Seen" : "Sent"}
+                          className={cn(
+                            "flex items-center",
+                            msg.watched
+                              ? "text-primary"
+                              : "text-muted-foreground"
+                          )}
+                        >
+                          <CheckCheck className="h-3 w-3" />
                         </span>
                       )}
                     </div>
@@ -290,23 +395,100 @@ export function ChatView({
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Image lightbox */}
+      {expandedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+          onClick={() => setExpandedImage(null)}
+          role="dialog"
+          aria-label="Image preview"
+        >
+          <button
+            onClick={() => setExpandedImage(null)}
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-card text-foreground shadow-lg"
+            aria-label="Close image"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img
+            src={expandedImage}
+            alt="Expanded message image"
+            className="max-h-[85vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
+      {/* File preview strip */}
+      {selectedFile && filePreview && (
+        <div className="flex items-center gap-2 border-t border-border bg-card px-4 py-2">
+          <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border border-border">
+            <img
+              src={filePreview}
+              alt="Selected file preview"
+              className="h-full w-full object-cover"
+            />
+            <button
+              onClick={removeSelectedFile}
+              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow"
+              aria-label="Remove attachment"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-medium text-foreground">
+              {selectedFile.name}
+            </span>
+            <span className="text-[10px] text-muted-foreground">
+              {(selectedFile.size / 1024).toFixed(1)} KB
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <form
         onSubmit={handleSend}
         className="flex items-center gap-2 border-t border-border px-4 py-3"
       >
         <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          className="hidden"
+          aria-label="Attach image"
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className={cn(
+            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg transition-colors",
+            selectedFile
+              ? "bg-primary/15 text-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+          )}
+          aria-label="Attach image"
+        >
+          {selectedFile ? (
+            <ImageIcon className="h-4 w-4" />
+          ) : (
+            <Paperclip className="h-4 w-4" />
+          )}
+        </button>
+        <input
           ref={inputRef}
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type a message..."
-          className="flex-1 h-10 rounded-lg border border-input bg-card px-3 text-sm text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className="h-10 flex-1 rounded-lg border border-input bg-card px-3 text-sm text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
         <button
           type="submit"
-          disabled={!input.trim()}
-          className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!input.trim() && !selectedFile}
+          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Send message"
         >
           <Send className="h-4 w-4" />
