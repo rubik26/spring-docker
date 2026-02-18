@@ -1,5 +1,5 @@
 # spring-docker
-a simple spring project which implements spring security that wrapped by docker-compose
+a simple spring messenger which wrapped by docker-compose
 
 ## Run the project
 
