@@ -29,6 +29,22 @@ public class DirectIMessageImageServiceImpl implements DirectMessageImageService
         return directMessageImageRepo.findAll();
     }
 
+    private DirectMessageImage accessTest(int id){
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        DirectMessageImage directMessageImage = directMessageImageRepo.findById(id).orElseThrow(() ->
+                new RuntimeException("Image not found"));
+
+        UserPrincipial currentUser = (UserPrincipial) authentication.getPrincipal();
+
+        if(currentUser.getId() != directMessageImage.getMessage().getUser().getId()) {
+            throw new RuntimeException("Access denied");
+        }
+
+        return directMessageImage;
+    }
+
     @Override
     public DirectMessageImage createImage(int messageId, MultipartFile imageFile) throws IOException {
 
@@ -41,25 +57,12 @@ public class DirectIMessageImageServiceImpl implements DirectMessageImageService
         directMessageImage.setImageType(imageFile.getContentType());
         directMessageImage.setMessage(directMessage);
 
-
-        System.out.println("File size: " + imageFile.getSize());
-        System.out.println("Bytes length: " + imageFile.getBytes().length);
         return directMessageImageRepo.save(directMessageImage);
     }
 
     @Override
     public DirectMessageImage editImage(int id, MultipartFile imageFile) throws IOException {
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        DirectMessageImage directMessageImage = directMessageImageRepo.findById(id).orElseThrow(() ->
-                new RuntimeException("Image not found"));
-
-        UserPrincipial currentUser = (UserPrincipial) authentication.getPrincipal();
-
-        if(currentUser.getId() != directMessageImage.getMessage().getUser().getId()) {
-            throw new RuntimeException("Access denied");
-        }
+        DirectMessageImage directMessageImage = accessTest(id);
 
         directMessageImage.setImageName(imageFile.getOriginalFilename());
         directMessageImage.setImageData(imageFile.getBytes());
@@ -71,17 +74,7 @@ public class DirectIMessageImageServiceImpl implements DirectMessageImageService
 
     @Override
     public void deleteImage(int id) {
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        DirectMessageImage directMessageImage = directMessageImageRepo.findById(id).orElseThrow(() ->
-                new RuntimeException("Image not found"));
-
-        UserPrincipial currentUser = (UserPrincipial) authentication.getPrincipal();
-
-        if(currentUser.getId() != directMessageImage.getMessage().getUser().getId()) {
-            throw new RuntimeException("Access denied");
-        }
+        accessTest(id);
 
         directMessageImageRepo.deleteById(id);
     }

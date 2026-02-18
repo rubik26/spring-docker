@@ -20,13 +20,20 @@ public class UserServiceImpl implements UserService {
 
     private final SecurityConfig securityConfig;
 
+    private User accessTest(int id){
+        Authentication auth =
+                SecurityContextHolder.getContext().getAuthentication();
 
+        UserPrincipial authenticatedUser = (UserPrincipial) auth.getPrincipal();
 
+        User user = repo.findById(id).
+                orElseThrow(() -> new RuntimeException("User not found"));
+        if(user.getId() != authenticatedUser.getId()){
+            throw new RuntimeException("Access denied");
+        }
 
-
-
-
-
+        return user;
+    }
     @Override
     public List<User> getUsers() {
         return repo.findAll();
@@ -38,36 +45,34 @@ public class UserServiceImpl implements UserService {
         if(user.getPassword().length() < 8){
             throw new RuntimeException("Password should be more than 8");
         }
+
         user.setPassword(securityConfig.passwordEncoder().encode(user.getPassword()));
+
         return repo.save(user);
     }
 
     @Override
     public User updateUser(int id, User user) {
-        Authentication auth =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        UserPrincipial authenticatedUser = (UserPrincipial) auth.getPrincipal();
-        User getUserForUpdate = repo.findById(id).
-                orElseThrow(() -> new RuntimeException("User not found"));
-        if(getUserForUpdate.getId() != authenticatedUser.getId()){
-            throw new RuntimeException("Access denied");
-        }
+        User getUserForUpdate = accessTest(id);
         getUserForUpdate.setUsername(user.getUsername());
         return repo.save(getUserForUpdate);
     }
 
     @Override
     public void deleteUser(int id) {
+        accessTest(id);
+
+        repo.deleteById(id);
+    }
+
+    @Override
+    public User getMe() {
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
 
         UserPrincipial authenticatedUser = (UserPrincipial) authentication.getPrincipal();
-        User getUserForDelete = repo.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
 
-        if(getUserForDelete.getId() != authenticatedUser.getId()){
-            throw new RuntimeException("Access denied");
-        }
-        repo.deleteById(id);
+        return repo.findById(authenticatedUser.getId()).orElseThrow(()
+                -> new RuntimeException("User not found"));
     }
 }

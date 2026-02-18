@@ -18,7 +18,7 @@ public class DirectMessageImageController {
     private final DirectMessageImageService directMessageImageService;
 
 
-    @GetMapping("/directImages")
+    @GetMapping("directImages")
     public List<DirectMessageImage> getImages(){
         return directMessageImageService.getImages();
     }

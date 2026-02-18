@@ -25,6 +25,24 @@ public class GroupMessageImageServiceImpl implements GroupMessageImageService {
     public final GroupMessageRepo groupMessageRepo;
 
 
+
+    private GroupMessageImage getAccess(int id){
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        GroupMessageImage groupMessageImage = groupMessageImageRepo.findById(id).orElseThrow(() ->
+                new RuntimeException("Image not found"));
+
+        UserPrincipial currentUser = (UserPrincipial) authentication.getPrincipal();
+
+        if(currentUser.getId() != groupMessageImage.getMessage().getUser().getId()) {
+            throw new RuntimeException("Access denied");
+        }
+
+        return groupMessageImage;
+    }
+
+
     @Override
     public List<GroupMessageImage> getImages() {
         return groupMessageImageRepo.findAll();
@@ -50,17 +68,7 @@ public class GroupMessageImageServiceImpl implements GroupMessageImageService {
 
     @Override
     public GroupMessageImage editImage(int id, MultipartFile imageFile) throws IOException {
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        GroupMessageImage groupMessageImage = groupMessageImageRepo.findById(id).orElseThrow(() ->
-                new RuntimeException("Image not found"));
-
-        UserPrincipial currentUser = (UserPrincipial) authentication.getPrincipal();
-
-        if(currentUser.getId() != groupMessageImage.getMessage().getUser().getId()) {
-            throw new RuntimeException("Access denied");
-        }
+        GroupMessageImage groupMessageImage = getAccess(id);
 
         groupMessageImage.setImageName(imageFile.getOriginalFilename());
         groupMessageImage.setImageData(imageFile.getBytes());
@@ -72,18 +80,8 @@ public class GroupMessageImageServiceImpl implements GroupMessageImageService {
 
     @Override
     public void deleteImage(int id) {
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+       getAccess(id);
 
-        GroupMessageImage groupMessageImage = groupMessageImageRepo.findById(id).orElseThrow(() ->
-                new RuntimeException("Image not found"));
-
-        UserPrincipial currentUser = (UserPrincipial) authentication.getPrincipal();
-
-        if(currentUser.getId() != groupMessageImage.getMessage().getUser().getId()) {
-            throw new RuntimeException("Access denied");
-        }
-
-        groupMessageImageRepo.deleteById(id);
+       groupMessageImageRepo.deleteById(id);
     }
 }

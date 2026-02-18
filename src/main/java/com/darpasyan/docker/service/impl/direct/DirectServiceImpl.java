@@ -36,6 +36,7 @@ public class DirectServiceImpl implements DirectService {
     @Override
     public List<Direct> getDirectByUsername(String username) {
         Authentication authentication =
+
                 SecurityContextHolder.getContext().getAuthentication();
 
 
@@ -46,8 +47,6 @@ public class DirectServiceImpl implements DirectService {
         User me = userRepo.findById(currentUser.getId()).orElseThrow(
                 () -> new RuntimeException("User not found")
         );
-
-
 
        return directRepo.searchDirects(me, username);
     }

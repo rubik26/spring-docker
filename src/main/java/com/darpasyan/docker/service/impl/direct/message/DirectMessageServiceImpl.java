@@ -103,15 +103,9 @@ public class DirectMessageServiceImpl implements DirectMessageService {
 
     @Override
     public DirectMessage createDirectMessage(int directId, DirectMessage directMessage) {
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+       AccessData accessData = putAndDeleteAccess(directId);
 
-        UserPrincipial currentUser =
-                (UserPrincipial) authentication.getPrincipal();
-
-        User user = userRepo.findById(currentUser.getId()).orElseThrow(
-                () -> new RuntimeException("User not found")
-        );
+       User user = accessData.user;
 
 
         Direct direct = directRepo.findById(directId).orElseThrow(

@@ -32,7 +32,7 @@ public class GroupMessageServiceImpl implements GroupMessageService {
             Group group
     ){}
 
-    private AccessData getAccess(int groupId){
+    private AccessData getAccessToGroup(int groupId){
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
 
@@ -57,16 +57,32 @@ public class GroupMessageServiceImpl implements GroupMessageService {
     }
 
 
+    private GroupMessage getAccessToMessage(int id){
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipial currentUser = (UserPrincipial) authentication.getPrincipal();
+
+        GroupMessage groupMessage = groupMessageRepo.findById(id).orElseThrow(() ->
+                new RuntimeException("Message not found"));
+
+        if(currentUser.getId() != groupMessage.getUser().getId()){
+            throw new RuntimeException("Access denied");
+        }
+
+        return groupMessage;
+    }
+
+
     @Override
     public List<GroupMessage> getGroupMessagesByGroup(int groupId) {
 
-        return groupMessageRepo.findGroupMessagesByGroup(getAccess(groupId).group());
+        return groupMessageRepo.findGroupMessagesByGroup(getAccessToGroup(groupId).group());
     }
 
     @Override
     public GroupMessage createGroupMessage(int groupId, GroupMessage message) {
 
-        AccessData data = getAccess(groupId);
+        AccessData data = getAccessToGroup(groupId);
 
 
 
@@ -79,36 +95,18 @@ public class GroupMessageServiceImpl implements GroupMessageService {
 
     @Override
     public GroupMessage editGroupMessage(int id, GroupMessage message) {
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-        UserPrincipial currentUser = (UserPrincipial) authentication.getPrincipal();
+        GroupMessage groupMessage = getAccessToMessage(id);
 
-        GroupMessage groupMessageForEdit = groupMessageRepo.findById(id).orElseThrow(() ->
-                new RuntimeException("Message not found"));
+        groupMessage.setContent(message.getContent());
+        groupMessage.setEdited(true);
 
-        if(currentUser.getId() != groupMessageForEdit.getUser().getId()){
-            throw new RuntimeException("Access denied");
-        }
-
-        groupMessageForEdit.setContent(message.getContent());
-        groupMessageForEdit.setEdited(true);
-
-        return groupMessageRepo.save(groupMessageForEdit);
+        return groupMessageRepo.save(groupMessage);
 
     }
 
     @Override
     public void deleteGroupMessage(int id) {
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-        UserPrincipial currentUser = (UserPrincipial) authentication.getPrincipal();
-
-        GroupMessage messageForDelete = groupMessageRepo.findById(id).orElseThrow(() ->
-                new RuntimeException("Message not found"));
-
-        if(currentUser.getId() != messageForDelete.getUser().getId()){
-            throw new RuntimeException("Access denied");
-        }
+        getAccessToMessage(id);
 
         groupMessageRepo.deleteById(id);
     }
@@ -116,24 +114,7 @@ public class GroupMessageServiceImpl implements GroupMessageService {
     @Override
     public List<GroupMessage> getGroupMessagesByUser(int groupId, String username) {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        UserPrincipial currentUser =
-                (UserPrincipial)  authentication.getPrincipal();
-
-        User user = userRepo.findById(currentUser.getId()).orElseThrow(
-                () -> new RuntimeException("User not found")
-        );
-
-
-        Group group = groupRepo.findById(groupId).orElseThrow(
-                () -> new RuntimeException("Group not found")
-        );
-
-        if(!group.getParticipants().contains(user)){
-            throw new RuntimeException("Access denied. You are not in the group");
-        }
+        getAccessToGroup(groupId);
 
         User sender = userRepo.findByUsername(username);
 
