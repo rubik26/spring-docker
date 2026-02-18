@@ -2,6 +2,7 @@ package com.darpasyan.docker.model.group.message.image;
 
 import com.darpasyan.docker.model.group.message.GroupMessage;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -32,5 +33,6 @@ public class GroupMessageImage {
 
     @ManyToOne
     @JoinColumn(name = "message_id")
+    @JsonIgnore
     private GroupMessage message;
 }
