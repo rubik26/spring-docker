@@ -3,7 +3,9 @@ package com.darpasyan.docker.model.direct.message;
 
 import com.darpasyan.docker.model.User.User;
 import com.darpasyan.docker.model.direct.Direct;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,6 +18,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "direct_messages")
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id"
+)
 public class DirectMessage {
 
     @Id
@@ -28,11 +34,9 @@ public class DirectMessage {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    @JsonIgnore
     private User user;
 
     @ManyToOne
     @JoinColumn(name = "direct_id")
-    @JsonIgnore
     private Direct direct;
 }

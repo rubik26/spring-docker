@@ -2,7 +2,10 @@ package com.darpasyan.docker.model.User;
 
 
 import com.darpasyan.docker.model.group.Group;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.ObjectIdGenerator;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,6 +19,10 @@ import java.util.Set;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id"
+)
 public class User {
 
     @Id
@@ -28,7 +35,6 @@ public class User {
 
 
     @ManyToMany(mappedBy = "participants")
-    @JsonIgnore
     private Set<Group> groups;
 
 
@@ -40,11 +46,11 @@ public class User {
 
             inverseJoinColumns = @JoinColumn(name = "blocked_user_id")
     )
-    @JsonIgnore
     private Set<User> blacklist;
 
 
     @ManyToMany(mappedBy = "blacklist")
-    @JsonIgnore
     private Set<User> blockedBy;
+
+
 }

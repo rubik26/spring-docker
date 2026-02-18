@@ -1,7 +1,9 @@
 package com.darpasyan.docker.model.direct.message.image;
 
 import com.darpasyan.docker.model.direct.message.DirectMessage;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,6 +14,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Table(name = "direct_message_images")
 @Data
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id"
+)
 public class DirectMessageImage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,6 +32,5 @@ public class DirectMessageImage {
 
     @ManyToOne
     @JoinColumn(name = "message_id")
-    @JsonIgnore
     private DirectMessage message;
 }
