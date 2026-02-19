@@ -3,7 +3,6 @@ package com.darpasyan.docker.model.direct.message;
 
 import com.darpasyan.docker.model.User.User;
 import com.darpasyan.docker.model.direct.Direct;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -28,11 +27,9 @@ public class DirectMessage {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    @JsonIgnore
     private User user;
 
     @ManyToOne
     @JoinColumn(name = "direct_id")
-    @JsonIgnore
     private Direct direct;
 }

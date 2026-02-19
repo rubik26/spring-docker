@@ -3,6 +3,8 @@ package com.darpasyan.docker.service.impl.direct;
 import com.darpasyan.docker.model.direct.Direct;
 import com.darpasyan.docker.model.User.User;
 import com.darpasyan.docker.model.User.UserPrincipial;
+import com.darpasyan.docker.model.direct.dto.DirectRequestDto;
+import com.darpasyan.docker.model.direct.dto.DirectResponseDto;
 import com.darpasyan.docker.repo.direct.DirectRepo;
 import com.darpasyan.docker.repo.UserRepo;
 import com.darpasyan.docker.service.direct.DirectService;
@@ -22,21 +24,35 @@ public class DirectServiceImpl implements DirectService {
 
     private final UserRepo userRepo;
 
+
+    private DirectResponseDto toDirectResponseDto(Direct direct){
+        return new DirectResponseDto(
+                direct.getId(),
+                direct.getSender().getId(),
+                direct.getSender().getUsername(),
+                direct.getRecipient().getId(),
+                direct.getRecipient().getUsername()
+        );
+    }
+
+
     @Override
-    public List<Direct> getDirectsByCurrentUser() {
+    public List<DirectResponseDto> getDirectsByCurrentUser() {
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
 
         UserPrincipial currentUser =
                 (UserPrincipial) authentication.getPrincipal();
 
-        return directRepo.myDirects(currentUser.getId());
+        return directRepo.myDirects(currentUser.getId())
+                .stream()
+                .map(this::toDirectResponseDto
+                        ).toList();
     }
 
     @Override
-    public List<Direct> getDirectByUsername(String username) {
+    public List<DirectResponseDto> getDirectByUsername(String username) {
         Authentication authentication =
-
                 SecurityContextHolder.getContext().getAuthentication();
 
 
@@ -48,40 +64,40 @@ public class DirectServiceImpl implements DirectService {
                 () -> new RuntimeException("User not found")
         );
 
-       return directRepo.searchDirects(me, username);
+       return directRepo.searchDirects(me, username).
+               stream().
+               map(this::toDirectResponseDto).
+               toList();
     }
 
     @Override
-    public Direct createDirect(int receiverId, Direct direct) {
+    public DirectResponseDto createDirect(DirectRequestDto directRequestDto) {
+
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
-
 
         UserPrincipial currentUser =
                 (UserPrincipial) authentication.getPrincipal();
 
+        User me = userRepo.findById(currentUser.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        User me = userRepo.findById(currentUser.getId()).orElseThrow(
-                () -> new RuntimeException("User not found")
-        );
-
-        User receiver = userRepo.findById(receiverId).orElseThrow(
-                () -> new RuntimeException("User not found")
-        );
-
+        User receiver = userRepo.findById(directRequestDto.getRecipientId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         Direct existing = directRepo.findBetweenUsers(me, receiver);
 
-        if(existing != null){
-            return existing;
+        if (existing != null) {
+            return toDirectResponseDto(existing);
         }
 
-        Direct direct1 = new Direct();
+        Direct direct = new Direct();
+        direct.setSender(me);
+        direct.setRecipient(receiver);
+        direct.setDateOfStart(LocalDate.now());
 
-        direct1.setSender(me);
-        direct1.setRecipient(receiver);
-        direct1.setDateOfStart(LocalDate.now());
+        directRepo.save(direct);
 
-        return directRepo.save(direct1);
+        return toDirectResponseDto(direct);
     }
 }

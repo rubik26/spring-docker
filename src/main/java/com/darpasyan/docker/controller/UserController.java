@@ -2,6 +2,8 @@ package com.darpasyan.docker.controller;
 
 
 import com.darpasyan.docker.model.User.User;
+import com.darpasyan.docker.model.User.dto.UserRequestDto;
+import com.darpasyan.docker.model.User.dto.UserResponseDto;
 import com.darpasyan.docker.service.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -19,23 +21,23 @@ public class UserController {
 
 
     @GetMapping("/me")
-    public User getMe(){
+    public UserResponseDto getMe(){
         return service.getMe();
     }
 
 
     @GetMapping("users")
-    public List<User> getUsers(){
+    public List<UserResponseDto> getUsers(){
         return service.getUsers();
     }
 
     @PostMapping("createUser")
-    public User addUser(@RequestBody User user){
+    public UserRequestDto addUser(@RequestBody User user){
         return service.createUser(user);
     }
 
     @PutMapping("updateUser/{id}")
-    public User updateUser(@PathVariable int id, @RequestBody User user){
+    public UserRequestDto updateUser(@PathVariable int id, @RequestBody User user){
         return service.updateUser(id, user);
     }
 

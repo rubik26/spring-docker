@@ -30,12 +30,10 @@ public class GroupMessage {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    @JsonIgnore
     private User user;
 
     @ManyToOne
     @JoinColumn(name = "group_id")
-    @JsonIgnore
     private Group group;
 
 

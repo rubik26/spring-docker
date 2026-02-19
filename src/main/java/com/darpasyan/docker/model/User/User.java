@@ -2,7 +2,6 @@ package com.darpasyan.docker.model.User;
 
 
 import com.darpasyan.docker.model.group.Group;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,25 +27,21 @@ public class User {
 
 
     @ManyToMany(mappedBy = "participants")
-    @JsonIgnore
     private Set<Group> groups;
 
 
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany
     @JoinTable(
             name = "user_blacklist",
             joinColumns = @JoinColumn(name = "user_id"),
 
             inverseJoinColumns = @JoinColumn(name = "blocked_user_id")
     )
-    @JsonIgnore
     private Set<User> blacklist;
 
 
     @ManyToMany(mappedBy = "blacklist")
-    @JsonIgnore
     private Set<User> blockedBy;
-
 
 }

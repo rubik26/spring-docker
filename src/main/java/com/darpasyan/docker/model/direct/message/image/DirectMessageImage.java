@@ -26,6 +26,5 @@ public class DirectMessageImage {
 
     @ManyToOne
     @JoinColumn(name = "message_id")
-    @JsonIgnore
     private DirectMessage message;
 }

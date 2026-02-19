@@ -1,15 +1,16 @@
 package com.darpasyan.docker.service.direct.message;
 
-import com.darpasyan.docker.model.direct.message.DirectMessage;
+import com.darpasyan.docker.model.direct.message.dto.DirectMessageRequestDto;
+import com.darpasyan.docker.model.direct.message.dto.DirectMessageResponseDto;
 
 
 import java.util.List;
 
 public interface DirectMessageService {
-    List<DirectMessage> getMessagesByDirect(int directId);
+    List<DirectMessageResponseDto> getMessagesByDirect(int directId);
 
-    List<DirectMessage> getDirectMessagesByUsername(int directId, String username);
-    DirectMessage createDirectMessage(int directId, DirectMessage directMessage);
-    DirectMessage editDirectMessage(int id, DirectMessage directMessage);
-    void deleteDirectMessage(int id);
+    List<DirectMessageResponseDto> getDirectMessagesByUsername(int directId, String username);
+    DirectMessageResponseDto createDirectMessage(DirectMessageRequestDto directMessageRequestDto);
+    DirectMessageResponseDto editDirectMessage(DirectMessageRequestDto directMessageRequestDto);
+    void deleteDirectMessage(DirectMessageRequestDto directMessageRequestDto);
 }

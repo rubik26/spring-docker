@@ -33,6 +33,5 @@ public class GroupMessageImage {
 
     @ManyToOne
     @JoinColumn(name = "message_id")
-    @JsonIgnore
     private GroupMessage message;
 }

@@ -1,9 +1,12 @@
 package com.darpasyan.docker.service.impl.direct.message;
 
 import com.darpasyan.docker.model.direct.Direct;
+import com.darpasyan.docker.model.direct.dto.DirectRequestDto;
 import com.darpasyan.docker.model.direct.message.DirectMessage;
 import com.darpasyan.docker.model.User.User;
 import com.darpasyan.docker.model.User.UserPrincipial;
+import com.darpasyan.docker.model.direct.message.dto.DirectMessageRequestDto;
+import com.darpasyan.docker.model.direct.message.dto.DirectMessageResponseDto;
 import com.darpasyan.docker.repo.direct.message.DirectMessageRepo;
 import com.darpasyan.docker.repo.direct.DirectRepo;
 import com.darpasyan.docker.repo.UserRepo;
@@ -25,6 +28,20 @@ public class DirectMessageServiceImpl implements DirectMessageService {
     private final UserRepo userRepo;
 
     private final DirectRepo directRepo;
+
+
+    private DirectMessageResponseDto toDirectMessageResponseDto(DirectMessage directMessage){
+        return new DirectMessageResponseDto(
+                directMessage.getId(),
+                directMessage.getContent(),
+                directMessage.getDateOfSend(),
+                directMessage.isEdited(),
+                directMessage.isWatched(),
+                directMessage.getUser().getId(),
+                directMessage.getUser().getUsername()
+        );
+    }
+
 
 
     private Direct getAccessTest(int directId){
@@ -58,7 +75,29 @@ public class DirectMessageServiceImpl implements DirectMessageService {
             DirectMessage message
     ){}
 
+    private record CreateAccessData(
+            User user,
+            Direct direct
+    ){}
 
+    private CreateAccessData createAccess(int directId){
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        UserPrincipial currentUser =
+                (UserPrincipial) authentication.getPrincipal();
+
+        User user = userRepo.findByIdWithRelations(currentUser.getId());
+
+        Direct direct = directRepo.findById(directId).orElseThrow(
+                () -> new RuntimeException("Direct not found")
+        );
+        if(direct.getSender().getId() != user.getId() && direct.getRecipient().getId() != user.getId()){
+            throw new RuntimeException("Access denied");
+        }
+
+        return new CreateAccessData(user, direct);
+    }
     private AccessData putAndDeleteAccess(int id){
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
@@ -85,38 +124,42 @@ public class DirectMessageServiceImpl implements DirectMessageService {
     }
 
     @Override
-    public List<DirectMessage> getMessagesByDirect(int directId) {
+    public List<DirectMessageResponseDto> getMessagesByDirect(int directId) {
 
-        return directMessageRepo.getDirectMessagesByDirect(getAccessTest(directId));
+        return directMessageRepo.getDirectMessagesByDirect(getAccessTest(directId))
+                .stream()
+                .map(this::toDirectMessageResponseDto).
+                toList();
+
     }
 
     @Override
-    public List<DirectMessage> getDirectMessagesByUsername(int directId, String username) {
+    public List<DirectMessageResponseDto> getDirectMessagesByUsername(int directId, String username) {
 
         getAccessTest(directId);
 
 
         User user = userRepo.findByUsername(username);
 
-        return directMessageRepo.getDirectMessagesByUser(user);
+
+
+        return directMessageRepo.getDirectMessagesByUser(user).
+                stream().
+                map(this::toDirectMessageResponseDto).
+                toList();
     }
 
     @Override
-    public DirectMessage createDirectMessage(int directId, DirectMessage directMessage) {
-       AccessData accessData = putAndDeleteAccess(directId);
+    public DirectMessageResponseDto createDirectMessage(DirectMessageRequestDto directMessageRequestDto) {
+        CreateAccessData accessData = createAccess(directMessageRequestDto.getDirectId());
 
-       User user = accessData.user;
+        User user = accessData.user;
 
+        Direct direct = accessData.direct;
 
-        Direct direct = directRepo.findById(directId).orElseThrow(
-                () -> new RuntimeException("Direct not found")
-        );
+        DirectMessage directMessage = new DirectMessage();
 
-        if(direct.getSender().getId() != user.getId() && direct.getRecipient().getId() != user.getId()){
-            throw new RuntimeException("Access denied");
-        }
-
-
+        directMessage.setContent(directMessageRequestDto.getContent());
         directMessage.setDateOfSend(LocalDateTime.now());
         directMessage.setEdited(false);
         directMessage.setWatched(false);
@@ -124,18 +167,22 @@ public class DirectMessageServiceImpl implements DirectMessageService {
         directMessage.setUser(user);
         directMessage.setDirect(direct);
 
-        return directMessageRepo.save(directMessage);
+        directMessageRepo.save(directMessage);
+
+        return toDirectMessageResponseDto(directMessage);
     }
 
     @Override
-    public DirectMessage editDirectMessage(int id, DirectMessage directMessage) {
-        directMessage = putAndDeleteAccess(id).message();
+    public DirectMessageResponseDto editDirectMessage(DirectMessageRequestDto directMessageRequestDto) {
+       DirectMessage directMessageForEdit = putAndDeleteAccess(directMessageRequestDto.getId()).message();
 
-        directMessage.setContent(directMessage.getContent());
-        directMessage.setEdited(true);
+        directMessageForEdit.setContent(directMessageRequestDto.getContent());
+        directMessageForEdit.setEdited(true);
 
 
-        return directMessageRepo.save(directMessage);
+        directMessageRepo.save(directMessageForEdit);
+
+        return toDirectMessageResponseDto(directMessageForEdit);
 
     }
 
@@ -143,8 +190,8 @@ public class DirectMessageServiceImpl implements DirectMessageService {
 
 
     @Override
-    public void deleteDirectMessage(int id) {
-        AccessData data = putAndDeleteAccess(id);
+    public void deleteDirectMessage(DirectMessageRequestDto directMessageRequestDto) {
+        AccessData data = putAndDeleteAccess(directMessageRequestDto.getId());
 
         User user = data.user();
         DirectMessage directMessage = data.message();
@@ -154,6 +201,6 @@ public class DirectMessageServiceImpl implements DirectMessageService {
             throw new RuntimeException("Access denied");
         }
 
-        directMessageRepo.deleteById(id);
+        directMessageRepo.deleteById(directMessageRequestDto.getId());
     }
 }

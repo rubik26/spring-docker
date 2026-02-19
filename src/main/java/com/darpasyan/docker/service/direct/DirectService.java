@@ -2,12 +2,14 @@ package com.darpasyan.docker.service.direct;
 
 
 import com.darpasyan.docker.model.direct.Direct;
+import com.darpasyan.docker.model.direct.dto.DirectRequestDto;
+import com.darpasyan.docker.model.direct.dto.DirectResponseDto;
 
 import java.util.List;
 
 public interface DirectService {
-    List<Direct> getDirectsByCurrentUser();
-    List<Direct> getDirectByUsername(String username);
-    Direct createDirect(int receiverId, Direct direct);
+    List<DirectResponseDto> getDirectsByCurrentUser();
+    List<DirectResponseDto> getDirectByUsername(String username);
+    DirectResponseDto createDirect(DirectRequestDto directRequestDto);
 
 }

@@ -38,7 +38,6 @@ public class Group {
             joinColumns = @JoinColumn(name = "group_id"), // ключ этой сущности
             inverseJoinColumns = @JoinColumn(name = "user_id") // ключ другой сущности
     )
-    @JsonIgnore
     private List<User> moderators;
 
     @ManyToMany
@@ -47,7 +46,6 @@ public class Group {
             joinColumns = @JoinColumn(name = "group_id"), // ключ этой сущности
             inverseJoinColumns = @JoinColumn(name = "user_id") // ключ другой сущности
     )
-    @JsonIgnore
     private Set<User> participants;
 
 

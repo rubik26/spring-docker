@@ -1,15 +1,18 @@
 package com.darpasyan.docker.service;
 
 import com.darpasyan.docker.model.User.User;
+import com.darpasyan.docker.model.User.dto.UserRequestDto;
+import com.darpasyan.docker.model.User.dto.UserResponseDto;
 
 import java.util.List;
 
 public interface UserService {
 
-    List<User> getUsers();
-    User createUser(User user);
-    User updateUser(int id, User user);
+    List<UserResponseDto> getUsers();
+    UserRequestDto createUser(User user);
+    UserRequestDto updateUser(int id, User user);
     void deleteUser(int id);
 
-    User getMe();
+    UserResponseDto getMe();
+
 }

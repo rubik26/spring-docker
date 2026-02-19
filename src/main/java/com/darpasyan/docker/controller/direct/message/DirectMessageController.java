@@ -1,6 +1,10 @@
 package com.darpasyan.docker.controller.direct.message;
 
+import com.darpasyan.docker.model.direct.dto.DirectRequestDto;
+import com.darpasyan.docker.model.direct.dto.DirectResponseDto;
 import com.darpasyan.docker.model.direct.message.DirectMessage;
+import com.darpasyan.docker.model.direct.message.dto.DirectMessageRequestDto;
+import com.darpasyan.docker.model.direct.message.dto.DirectMessageResponseDto;
 import com.darpasyan.docker.service.direct.message.DirectMessageService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -16,27 +20,31 @@ public class DirectMessageController {
     private final DirectMessageService directMessageService;
 
     @GetMapping("directs/{directId}/messages")
-    public List<DirectMessage> getDirectMessagesByDirect(@PathVariable int directId){
+    public List<DirectMessageResponseDto> getDirectMessagesByDirect(@PathVariable int directId){
         return directMessageService.getMessagesByDirect(directId);
     }
 
     @GetMapping("directs/{directId}/{username}/messages")
-    public List<DirectMessage> getDirectMessageByUsername(@PathVariable int directId, @PathVariable String username){
+    public List<DirectMessageResponseDto> getDirectMessageByUsername(@PathVariable int directId, @PathVariable String username){
+
         return directMessageService.getDirectMessagesByUsername(directId, username);
     }
 
-    @PostMapping("directs/{directId}/createMessage")
-    public DirectMessage createDirectMessage(@PathVariable int directId, @RequestBody DirectMessage directMessage){
-        return directMessageService.createDirectMessage(directId, directMessage);
+    @PostMapping("directs/{directId}/createDirectMessage")
+    public DirectMessageResponseDto createDirectMessage(@RequestBody DirectMessageRequestDto directMessageRequestDto, @PathVariable int directId){
+        directMessageRequestDto.setDirectId(directId);
+        return directMessageService.createDirectMessage(directMessageRequestDto);
     }
 
-    @PutMapping("editDirectMessage{id}")
-    public DirectMessage editDirectMessage(@PathVariable int id, @RequestBody DirectMessage directMessage){
-        return directMessageService.editDirectMessage(id, directMessage);
+    @PutMapping("editDirectMessage/{id}")
+    public DirectMessageResponseDto editDirectMessage(@RequestBody DirectMessageRequestDto directMessageRequestDto, @PathVariable int id){
+        directMessageRequestDto.setId(id);
+        return directMessageService.editDirectMessage(directMessageRequestDto);
     }
 
     @DeleteMapping("deleteDirectMessage/{id}")
-    public void deleteDirectMessage(@PathVariable int id){
-        directMessageService.deleteDirectMessage(id);
+    public void deleteDirectMessage(@RequestBody DirectMessageRequestDto directMessageRequestDto, @PathVariable int id){
+        directMessageRequestDto.setId(id);
+        directMessageService.deleteDirectMessage(directMessageRequestDto);
     }
 }
