@@ -27,7 +27,7 @@ public class DirectController {
         return directService.getDirectByUsername(username);
     }
 
-    @PostMapping("users/{recipientId}createDirect")
+    @PostMapping("users/{recipientId}/createDirect")
     public DirectResponseDto createDirect(@RequestBody DirectRequestDto directRequestDto, @PathVariable int recipientId){
         directRequestDto.setRecipientId(recipientId);
         return directService.createDirect(directRequestDto);
