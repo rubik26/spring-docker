@@ -1,8 +1,10 @@
 package com.darpasyan.docker.service.impl.group;
 
 import com.darpasyan.docker.model.group.Group;
-import com.darpasyan.docker.model.User.User;
-import com.darpasyan.docker.model.User.UserPrincipial;
+import com.darpasyan.docker.model.group.dto.GroupRequestDto;
+import com.darpasyan.docker.model.group.dto.GroupResponseDto;
+import com.darpasyan.docker.model.user.User;
+import com.darpasyan.docker.model.user.UserPrincipial;
 import com.darpasyan.docker.repo.group.GroupRepo;
 import com.darpasyan.docker.repo.UserRepo;
 import com.darpasyan.docker.service.group.GroupService;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -23,13 +26,38 @@ public class GroupServiceImpl implements GroupService {
     private final UserRepo userRepo;
 
 
+
+    private GroupResponseDto toDto(Group group){
+        return new GroupResponseDto(
+                group.getId(),
+                group.getName(),
+                group.getDescription(),
+                group.getAvatar(),
+                group.getDateOfCreate(),
+                group.getAdmin().getId(),
+                group.getModerators().
+                        stream().
+                        map(User::getId).
+                        collect(Collectors.toSet()),
+                group.getParticipants().
+                        stream().
+                        map(User::getId).
+                        collect(Collectors.toSet())
+        );
+    }
+
+
     @Override
-    public List<Group> getGroups() {
-        return groupRepo.findAll();
+    public List<GroupResponseDto> getGroups() {
+        List<Group> groups = groupRepo.findGroupsWithUsers();
+
+        return groups.stream().map(this::toDto).toList();
+
+
     }
 
     @Override
-    public Group createGroup(Group group) {
+    public GroupResponseDto createGroup(GroupRequestDto fromDto) {
         Authentication authentication =
                 SecurityContextHolder.
                         getContext().
@@ -42,16 +70,26 @@ public class GroupServiceImpl implements GroupService {
                 () -> new RuntimeException("User not found")
         );
 
+        Group group = new Group();
 
+
+        group.setName(fromDto.getName());
+        group.setDescription(fromDto.getDescription());
+        group.setAvatar(fromDto.getAvatar());
+        group.setAvatarFileName(fromDto.getAvatarFileName());
+        group.setAvatarFileType(fromDto.getAvatarFileType());
+        group.setModerators(fromDto.getModeratorsId().stream().map(userRepo::findByIdWithRelations).collect(Collectors.toSet()));
         group.setParticipants(Set.of(user));
         group.setAdmin(user);
         group.setDateOfCreate(LocalDate.now());
 
-        return groupRepo.save(group);
+        groupRepo.save(group);
+
+        return toDto(group);
     }
 
     @Override
-    public Group updateGroup(int id, Group group) {
+    public GroupResponseDto updateGroup(int id, GroupRequestDto fromDto) {
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
 
@@ -68,30 +106,43 @@ public class GroupServiceImpl implements GroupService {
                () -> new RuntimeException("Group not found")
        );
 
-        if(user.getId() != groupForUpdate.getAdmin().getId() || !groupForUpdate.getModerators().contains(user)){
+        if(user.getId() != groupForUpdate.getAdmin().getId() && !groupForUpdate.getModerators().contains(user)){
             throw new  RuntimeException("Access denied");
         }
 
 
 
-        groupForUpdate.setName(group.getName());
-        groupForUpdate.setDescription(group.getDescription());
-        groupForUpdate.setParticipants(group.getParticipants());
-        groupForUpdate.setAvatar(group.getAvatar());
-        groupForUpdate.setAvatarFileName(group.getAvatarFileName());
-        groupForUpdate.setAvatarFileType(group.getAvatarFileType());
+        groupForUpdate.setName(fromDto.getName());
+        groupForUpdate.setDescription(fromDto.getDescription());
+        groupForUpdate.setParticipants(fromDto.getParticipantsId().
+                stream().
+                map(userRepo::findByIdWithRelations).
+                collect(Collectors.toSet()));
+
+
+        groupForUpdate.setAvatar(fromDto.getAvatar());
+        groupForUpdate.setAvatarFileName(fromDto.getAvatarFileName());
+        groupForUpdate.setAvatarFileType(fromDto.getAvatarFileType());
 
         if(user.getId() == groupForUpdate.getAdmin().getId()){
-            groupForUpdate.setModerators(group.getModerators());
+            groupForUpdate.setModerators(fromDto.getModeratorsId().
+                    stream().
+                    map(
+                            userRepo::findByIdWithRelations
+                    ).collect(Collectors.
+                            toSet())
+            );
 
-        } else if (group.getModerators().equals(groupForUpdate.getModerators())) {
+        } else if (fromDto.getModeratorsId().stream().map(userRepo::findByIdWithRelations).collect(Collectors.toSet()).equals(groupForUpdate.getModerators())) {
 
-            groupForUpdate.setModerators(group.getModerators());
+            groupForUpdate.setModerators(fromDto.getModeratorsId().stream().map(userRepo::findByIdWithRelations).collect(Collectors.toSet()));
         } else{
             throw new RuntimeException("Access denied. You are not an admin");
         }
 
-        return groupRepo.save(groupForUpdate);
+        groupRepo.save(groupForUpdate);
+
+        return toDto(groupForUpdate);
     }
 
     @Override
@@ -119,7 +170,10 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
-    public List<Group> findGroupByName(String name) {
-        return groupRepo.findGroupByName(name);
+    public List<GroupResponseDto> findGroupByName(String name) {
+        return groupRepo.findGroupByName(name).
+                stream().
+                map(this::toDto).
+                toList();
     }
 }

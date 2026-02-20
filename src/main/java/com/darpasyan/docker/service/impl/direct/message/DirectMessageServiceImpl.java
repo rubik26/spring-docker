@@ -1,10 +1,9 @@
 package com.darpasyan.docker.service.impl.direct.message;
 
 import com.darpasyan.docker.model.direct.Direct;
-import com.darpasyan.docker.model.direct.dto.DirectRequestDto;
 import com.darpasyan.docker.model.direct.message.DirectMessage;
-import com.darpasyan.docker.model.User.User;
-import com.darpasyan.docker.model.User.UserPrincipial;
+import com.darpasyan.docker.model.user.User;
+import com.darpasyan.docker.model.user.UserPrincipial;
 import com.darpasyan.docker.model.direct.message.dto.DirectMessageRequestDto;
 import com.darpasyan.docker.model.direct.message.dto.DirectMessageResponseDto;
 import com.darpasyan.docker.repo.direct.message.DirectMessageRepo;
@@ -30,7 +29,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
     private final DirectRepo directRepo;
 
 
-    private DirectMessageResponseDto toDirectMessageResponseDto(DirectMessage directMessage){
+    private DirectMessageResponseDto toDto(DirectMessage directMessage){
         return new DirectMessageResponseDto(
                 directMessage.getId(),
                 directMessage.getContent(),
@@ -98,6 +97,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
 
         return new CreateAccessData(user, direct);
     }
+
     private AccessData putAndDeleteAccess(int id){
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
@@ -123,12 +123,15 @@ public class DirectMessageServiceImpl implements DirectMessageService {
         return new AccessData(user, directMessage);
     }
 
+
+
+
     @Override
     public List<DirectMessageResponseDto> getMessagesByDirect(int directId) {
 
         return directMessageRepo.getDirectMessagesByDirect(getAccessTest(directId))
                 .stream()
-                .map(this::toDirectMessageResponseDto).
+                .map(this::toDto).
                 toList();
 
     }
@@ -145,7 +148,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
 
         return directMessageRepo.getDirectMessagesByUser(user).
                 stream().
-                map(this::toDirectMessageResponseDto).
+                map(this::toDto).
                 toList();
     }
 
@@ -169,12 +172,12 @@ public class DirectMessageServiceImpl implements DirectMessageService {
 
         directMessageRepo.save(directMessage);
 
-        return toDirectMessageResponseDto(directMessage);
+        return toDto(directMessage);
     }
 
     @Override
-    public DirectMessageResponseDto editDirectMessage(DirectMessageRequestDto directMessageRequestDto) {
-       DirectMessage directMessageForEdit = putAndDeleteAccess(directMessageRequestDto.getId()).message();
+    public DirectMessageResponseDto editDirectMessage(DirectMessageRequestDto directMessageRequestDto, int id) {
+       DirectMessage directMessageForEdit = putAndDeleteAccess(id).message;
 
         directMessageForEdit.setContent(directMessageRequestDto.getContent());
         directMessageForEdit.setEdited(true);
@@ -182,7 +185,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
 
         directMessageRepo.save(directMessageForEdit);
 
-        return toDirectMessageResponseDto(directMessageForEdit);
+        return toDto(directMessageForEdit);
 
     }
 
@@ -190,8 +193,8 @@ public class DirectMessageServiceImpl implements DirectMessageService {
 
 
     @Override
-    public void deleteDirectMessage(DirectMessageRequestDto directMessageRequestDto) {
-        AccessData data = putAndDeleteAccess(directMessageRequestDto.getId());
+    public void deleteDirectMessage(int id) {
+        AccessData data = putAndDeleteAccess(id);
 
         User user = data.user();
         DirectMessage directMessage = data.message();
@@ -201,6 +204,6 @@ public class DirectMessageServiceImpl implements DirectMessageService {
             throw new RuntimeException("Access denied");
         }
 
-        directMessageRepo.deleteById(directMessageRequestDto.getId());
+        directMessageRepo.deleteById(id);
     }
 }

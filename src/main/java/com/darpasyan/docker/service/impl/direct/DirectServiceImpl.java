@@ -1,8 +1,8 @@
 package com.darpasyan.docker.service.impl.direct;
 
 import com.darpasyan.docker.model.direct.Direct;
-import com.darpasyan.docker.model.User.User;
-import com.darpasyan.docker.model.User.UserPrincipial;
+import com.darpasyan.docker.model.user.User;
+import com.darpasyan.docker.model.user.UserPrincipial;
 import com.darpasyan.docker.model.direct.dto.DirectRequestDto;
 import com.darpasyan.docker.model.direct.dto.DirectResponseDto;
 import com.darpasyan.docker.repo.direct.DirectRepo;
@@ -25,7 +25,7 @@ public class DirectServiceImpl implements DirectService {
     private final UserRepo userRepo;
 
 
-    private DirectResponseDto toDirectResponseDto(Direct direct){
+    private DirectResponseDto toDto(Direct direct){
         return new DirectResponseDto(
                 direct.getId(),
                 direct.getSender().getId(),
@@ -46,7 +46,7 @@ public class DirectServiceImpl implements DirectService {
 
         return directRepo.myDirects(currentUser.getId())
                 .stream()
-                .map(this::toDirectResponseDto
+                .map(this::toDto
                         ).toList();
     }
 
@@ -66,7 +66,7 @@ public class DirectServiceImpl implements DirectService {
 
        return directRepo.searchDirects(me, username).
                stream().
-               map(this::toDirectResponseDto).
+               map(this::toDto).
                toList();
     }
 
@@ -88,7 +88,7 @@ public class DirectServiceImpl implements DirectService {
         Direct existing = directRepo.findBetweenUsers(me, receiver);
 
         if (existing != null) {
-            return toDirectResponseDto(existing);
+            return toDto(existing);
         }
 
         Direct direct = new Direct();
@@ -98,6 +98,6 @@ public class DirectServiceImpl implements DirectService {
 
         directRepo.save(direct);
 
-        return toDirectResponseDto(direct);
+        return toDto(direct);
     }
 }

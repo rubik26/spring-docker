@@ -2,8 +2,8 @@ package com.darpasyan.docker.service.impl.group.message;
 
 import com.darpasyan.docker.model.group.Group;
 import com.darpasyan.docker.model.group.message.GroupMessage;
-import com.darpasyan.docker.model.User.User;
-import com.darpasyan.docker.model.User.UserPrincipial;
+import com.darpasyan.docker.model.user.User;
+import com.darpasyan.docker.model.user.UserPrincipial;
 import com.darpasyan.docker.repo.group.message.GroupMessageRepo;
 import com.darpasyan.docker.repo.group.GroupRepo;
 import com.darpasyan.docker.repo.UserRepo;

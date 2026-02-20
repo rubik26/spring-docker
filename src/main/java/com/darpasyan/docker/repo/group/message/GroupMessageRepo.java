@@ -2,7 +2,7 @@ package com.darpasyan.docker.repo.group.message;
 
 import com.darpasyan.docker.model.group.Group;
 import com.darpasyan.docker.model.group.message.GroupMessage;
-import com.darpasyan.docker.model.User.User;
+import com.darpasyan.docker.model.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,8 +1,6 @@
 package com.darpasyan.docker.model.direct;
 
-import com.darpasyan.docker.model.User.User;
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.darpasyan.docker.model.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

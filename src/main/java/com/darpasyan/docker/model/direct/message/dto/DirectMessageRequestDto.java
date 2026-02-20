@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DirectMessageRequestDto {
-    private int id;
     private int directId;
     private String content;
 }

@@ -1,4 +1,4 @@
-package com.darpasyan.docker.model.User.dto;
+package com.darpasyan.docker.model.user.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

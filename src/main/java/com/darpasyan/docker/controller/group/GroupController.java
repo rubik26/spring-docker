@@ -1,6 +1,7 @@
 package com.darpasyan.docker.controller.group;
 
-import com.darpasyan.docker.model.group.Group;
+import com.darpasyan.docker.model.group.dto.GroupRequestDto;
+import com.darpasyan.docker.model.group.dto.GroupResponseDto;
 import com.darpasyan.docker.service.group.GroupService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -17,18 +18,18 @@ public class GroupController {
 
 
     @GetMapping("groups")
-    public List<Group> getGroups(){
+    public List<GroupResponseDto> getGroups(){
         return groupService.getGroups();
     }
 
     @PostMapping("createGroup")
-    public Group createGroup(@RequestBody Group group){
-        return groupService.createGroup(group);
+    public GroupResponseDto createGroup(@RequestBody GroupRequestDto fromDto){
+        return groupService.createGroup(fromDto);
     }
 
     @PutMapping("updateGroup/{id}")
-    public Group updateGroup(@PathVariable int id, @RequestBody Group group){
-        return groupService.updateGroup(id, group);
+    public GroupResponseDto updateGroup(@PathVariable int id, @RequestBody GroupRequestDto fromDto){
+        return groupService.updateGroup(id, fromDto);
     }
 
     @DeleteMapping("deleteGroup/{id}")
@@ -38,7 +39,7 @@ public class GroupController {
 
 
     @GetMapping("groups/{name}")
-    public List<Group> getGroupsByName(@PathVariable String name){
+    public List<GroupResponseDto> getGroupsByName(@PathVariable String name){
         return groupService.findGroupByName(name);
     }
 }

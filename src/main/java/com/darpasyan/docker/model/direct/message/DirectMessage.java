@@ -1,7 +1,7 @@
 package com.darpasyan.docker.model.direct.message;
 
 
-import com.darpasyan.docker.model.User.User;
+import com.darpasyan.docker.model.user.User;
 import com.darpasyan.docker.model.direct.Direct;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

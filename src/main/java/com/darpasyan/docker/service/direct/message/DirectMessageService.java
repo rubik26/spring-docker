@@ -11,6 +11,6 @@ public interface DirectMessageService {
 
     List<DirectMessageResponseDto> getDirectMessagesByUsername(int directId, String username);
     DirectMessageResponseDto createDirectMessage(DirectMessageRequestDto directMessageRequestDto);
-    DirectMessageResponseDto editDirectMessage(DirectMessageRequestDto directMessageRequestDto);
-    void deleteDirectMessage(DirectMessageRequestDto directMessageRequestDto);
+    DirectMessageResponseDto editDirectMessage(DirectMessageRequestDto directMessageRequestDto, int id);
+    void deleteDirectMessage(int id);
 }

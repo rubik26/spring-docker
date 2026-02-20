@@ -1,7 +1,7 @@
 package com.darpasyan.docker.service.impl;
 
-import com.darpasyan.docker.model.User.User;
-import com.darpasyan.docker.model.User.UserPrincipial;
+import com.darpasyan.docker.model.user.User;
+import com.darpasyan.docker.model.user.UserPrincipial;
 import com.darpasyan.docker.repo.UserRepo;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

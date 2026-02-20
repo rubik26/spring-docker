@@ -1,6 +1,8 @@
 package com.darpasyan.docker.controller.direct.message.image;
 
 import com.darpasyan.docker.model.direct.message.image.DirectMessageImage;
+import com.darpasyan.docker.model.direct.message.image.dto.DirectMessageImageRequestDto;
+import com.darpasyan.docker.model.direct.message.image.dto.DirectMessageImageResponseDto;
 import com.darpasyan.docker.service.direct.message.image.DirectMessageImageService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -19,21 +21,32 @@ public class DirectMessageImageController {
 
 
     @GetMapping("directImages")
-    public List<DirectMessageImage> getImages(){
+    public List<DirectMessageImageResponseDto> getImages(){
         return directMessageImageService.getImages();
     }
 
 
     @PostMapping("uploadDirectImage/{messageId}")
-    public DirectMessageImage createImage(@PathVariable int messageId, @RequestBody MultipartFile imageFile) throws IOException {
+    public DirectMessageImageResponseDto createImage(@PathVariable int messageId, @RequestBody MultipartFile imageFile) throws IOException {
+        DirectMessageImageRequestDto toDto = new DirectMessageImageRequestDto();
 
-        return directMessageImageService.createImage(messageId, imageFile);
+        toDto.setImageName(imageFile.getOriginalFilename());
+        toDto.setImageData(imageFile.getBytes());
+        toDto.setImageType(imageFile.getContentType());
+        toDto.setMessageId(messageId);
+
+        return directMessageImageService.createImage(messageId, toDto);
     }
 
 
     @PutMapping("editDirectImage/{id}")
-    public DirectMessageImage editImage(@PathVariable int id, @RequestBody MultipartFile imageFile) throws IOException {
-        return directMessageImageService.editImage(id, imageFile);
+    public DirectMessageImageResponseDto editImage(@PathVariable int id, @RequestBody MultipartFile imageFile) throws IOException {
+        DirectMessageImageRequestDto toDto = new DirectMessageImageRequestDto();
+
+        toDto.setImageName(imageFile.getOriginalFilename());
+        toDto.setImageData(imageFile.getBytes());
+        toDto.setImageType(imageFile.getContentType());
+        return directMessageImageService.editImage(id, toDto);
     }
 
 

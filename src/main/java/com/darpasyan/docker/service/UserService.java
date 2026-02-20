@@ -1,8 +1,8 @@
 package com.darpasyan.docker.service;
 
-import com.darpasyan.docker.model.User.User;
-import com.darpasyan.docker.model.User.dto.UserRequestDto;
-import com.darpasyan.docker.model.User.dto.UserResponseDto;
+import com.darpasyan.docker.model.user.User;
+import com.darpasyan.docker.model.user.dto.UserRequestDto;
+import com.darpasyan.docker.model.user.dto.UserResponseDto;
 
 import java.util.List;
 

@@ -38,13 +38,11 @@ public class DirectMessageController {
 
     @PutMapping("editDirectMessage/{id}")
     public DirectMessageResponseDto editDirectMessage(@RequestBody DirectMessageRequestDto directMessageRequestDto, @PathVariable int id){
-        directMessageRequestDto.setId(id);
-        return directMessageService.editDirectMessage(directMessageRequestDto);
+        return directMessageService.editDirectMessage(directMessageRequestDto, id);
     }
 
     @DeleteMapping("deleteDirectMessage/{id}")
-    public void deleteDirectMessage(@RequestBody DirectMessageRequestDto directMessageRequestDto, @PathVariable int id){
-        directMessageRequestDto.setId(id);
-        directMessageService.deleteDirectMessage(directMessageRequestDto);
+    public void deleteDirectMessage(@PathVariable int id){
+        directMessageService.deleteDirectMessage(id);
     }
 }

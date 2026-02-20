@@ -2,7 +2,7 @@ package com.darpasyan.docker.service.impl.group.message.image;
 
 import com.darpasyan.docker.model.group.message.image.GroupMessageImage;
 import com.darpasyan.docker.model.group.message.GroupMessage;
-import com.darpasyan.docker.model.User.UserPrincipial;
+import com.darpasyan.docker.model.user.UserPrincipial;
 import com.darpasyan.docker.repo.group.message.image.GroupMessageImageRepo;
 import com.darpasyan.docker.repo.group.message.GroupMessageRepo;
 import com.darpasyan.docker.service.group.message.image.GroupMessageImageService;

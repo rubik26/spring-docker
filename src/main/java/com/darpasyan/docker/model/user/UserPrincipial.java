@@ -1,4 +1,4 @@
-package com.darpasyan.docker.model.User;
+package com.darpasyan.docker.model.user;
 
 
 

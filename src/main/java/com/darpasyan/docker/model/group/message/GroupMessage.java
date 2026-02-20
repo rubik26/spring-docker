@@ -2,10 +2,7 @@ package com.darpasyan.docker.model.group.message;
 
 
 import com.darpasyan.docker.model.group.Group;
-import com.darpasyan.docker.model.User.User;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.darpasyan.docker.model.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

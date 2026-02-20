@@ -1,6 +1,6 @@
 package com.darpasyan.docker.repo;
 
-import com.darpasyan.docker.model.User.User;
+import com.darpasyan.docker.model.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

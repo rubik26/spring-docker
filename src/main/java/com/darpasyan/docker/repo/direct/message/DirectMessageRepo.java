@@ -3,7 +3,7 @@ package com.darpasyan.docker.repo.direct.message;
 
 import com.darpasyan.docker.model.direct.Direct;
 import com.darpasyan.docker.model.direct.message.DirectMessage;
-import com.darpasyan.docker.model.User.User;
+import com.darpasyan.docker.model.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,10 +1,10 @@
 package com.darpasyan.docker.service.impl;
 
 import com.darpasyan.docker.config.SecurityConfig;
-import com.darpasyan.docker.model.User.User;
-import com.darpasyan.docker.model.User.UserPrincipial;
-import com.darpasyan.docker.model.User.dto.UserRequestDto;
-import com.darpasyan.docker.model.User.dto.UserResponseDto;
+import com.darpasyan.docker.model.user.User;
+import com.darpasyan.docker.model.user.UserPrincipial;
+import com.darpasyan.docker.model.user.dto.UserRequestDto;
+import com.darpasyan.docker.model.user.dto.UserResponseDto;
 import com.darpasyan.docker.model.group.Group;
 import com.darpasyan.docker.repo.UserRepo;
 import com.darpasyan.docker.service.UserService;

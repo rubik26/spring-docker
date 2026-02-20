@@ -1,7 +1,6 @@
 package com.darpasyan.docker.model.group;
 
-import com.darpasyan.docker.model.User.User;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.darpasyan.docker.model.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,7 +10,8 @@ import java.util.Set;
 
 @Entity
 @Table(name = "groups")
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class Group {
@@ -38,7 +38,7 @@ public class Group {
             joinColumns = @JoinColumn(name = "group_id"), // ключ этой сущности
             inverseJoinColumns = @JoinColumn(name = "user_id") // ключ другой сущности
     )
-    private List<User> moderators;
+    private Set<User> moderators;
 
     @ManyToMany
     @JoinTable(
@@ -47,8 +47,5 @@ public class Group {
             inverseJoinColumns = @JoinColumn(name = "user_id") // ключ другой сущности
     )
     private Set<User> participants;
-
-
-
 
 }
