@@ -86,11 +86,14 @@ public class DirectMessageServiceImpl implements DirectMessageService {
         UserPrincipial currentUser =
                 (UserPrincipial) authentication.getPrincipal();
 
-        User user = userRepo.findByIdWithRelations(currentUser.getId());
+        User user = userRepo.findById(currentUser.getId()).orElseThrow(
+                () -> new RuntimeException("User not found")
+        );
 
         Direct direct = directRepo.findById(directId).orElseThrow(
                 () -> new RuntimeException("Direct not found")
         );
+
         if(direct.getSender().getId() != user.getId() && direct.getRecipient().getId() != user.getId()){
             throw new RuntimeException("Access denied");
         }
@@ -153,8 +156,8 @@ public class DirectMessageServiceImpl implements DirectMessageService {
     }
 
     @Override
-    public DirectMessageResponseDto createDirectMessage(DirectMessageRequestDto directMessageRequestDto) {
-        CreateAccessData accessData = createAccess(directMessageRequestDto.getDirectId());
+    public DirectMessageResponseDto createDirectMessage(DirectMessageRequestDto fromDto, int directId) {
+        CreateAccessData accessData = createAccess(directId);
 
         User user = accessData.user;
 
@@ -162,7 +165,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
 
         DirectMessage directMessage = new DirectMessage();
 
-        directMessage.setContent(directMessageRequestDto.getContent());
+        directMessage.setContent(fromDto.getContent());
         directMessage.setDateOfSend(LocalDateTime.now());
         directMessage.setEdited(false);
         directMessage.setWatched(false);
@@ -176,10 +179,10 @@ public class DirectMessageServiceImpl implements DirectMessageService {
     }
 
     @Override
-    public DirectMessageResponseDto editDirectMessage(DirectMessageRequestDto directMessageRequestDto, int id) {
+    public DirectMessageResponseDto editDirectMessage(DirectMessageRequestDto fromDto, int id) {
        DirectMessage directMessageForEdit = putAndDeleteAccess(id).message;
 
-        directMessageForEdit.setContent(directMessageRequestDto.getContent());
+        directMessageForEdit.setContent(fromDto.getContent());
         directMessageForEdit.setEdited(true);
 
 

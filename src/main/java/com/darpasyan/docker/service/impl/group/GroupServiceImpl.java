@@ -49,7 +49,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public List<GroupResponseDto> getGroups() {
-        List<Group> groups = groupRepo.findGroupsWithUsers();
+        List<Group> groups = groupRepo.findAll();
 
         return groups.stream().map(this::toDto).toList();
 
@@ -78,7 +78,9 @@ public class GroupServiceImpl implements GroupService {
         group.setAvatar(fromDto.getAvatar());
         group.setAvatarFileName(fromDto.getAvatarFileName());
         group.setAvatarFileType(fromDto.getAvatarFileType());
-        group.setModerators(fromDto.getModeratorsId().stream().map(userRepo::findByIdWithRelations).collect(Collectors.toSet()));
+        group.setModerators(fromDto.getModeratorsId().stream().map(participantsId -> userRepo.findById(participantsId).orElseThrow(
+                () -> new RuntimeException("User not found")
+        )).collect(Collectors.toSet()));
         group.setParticipants(Set.of(user));
         group.setAdmin(user);
         group.setDateOfCreate(LocalDate.now());
@@ -116,7 +118,9 @@ public class GroupServiceImpl implements GroupService {
         groupForUpdate.setDescription(fromDto.getDescription());
         groupForUpdate.setParticipants(fromDto.getParticipantsId().
                 stream().
-                map(userRepo::findByIdWithRelations).
+                map(participantsId -> userRepo.findById(participantsId).orElseThrow(
+                        () -> new RuntimeException("User not found")
+                )).
                 collect(Collectors.toSet()));
 
 
@@ -128,14 +132,20 @@ public class GroupServiceImpl implements GroupService {
             groupForUpdate.setModerators(fromDto.getModeratorsId().
                     stream().
                     map(
-                            userRepo::findByIdWithRelations
+                            moderatorsId -> userRepo.findById(moderatorsId).orElseThrow(
+                                    () -> new RuntimeException("User not found")
+                            )
                     ).collect(Collectors.
                             toSet())
             );
 
-        } else if (fromDto.getModeratorsId().stream().map(userRepo::findByIdWithRelations).collect(Collectors.toSet()).equals(groupForUpdate.getModerators())) {
+        } else if (fromDto.getModeratorsId().stream().map(moderatorsId -> userRepo.findById(moderatorsId).orElseThrow(
+                () -> new RuntimeException("User not found")
+        )).collect(Collectors.toSet()).equals(groupForUpdate.getModerators())) {
 
-            groupForUpdate.setModerators(fromDto.getModeratorsId().stream().map(userRepo::findByIdWithRelations).collect(Collectors.toSet()));
+            groupForUpdate.setModerators(fromDto.getModeratorsId().stream().map(moderatorsId -> userRepo.findById(moderatorsId).orElseThrow(
+                    () -> new RuntimeException("User not found")
+            )).collect(Collectors.toSet()));
         } else{
             throw new RuntimeException("Access denied. You are not an admin");
         }
@@ -171,7 +181,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public List<GroupResponseDto> findGroupByName(String name) {
-        return groupRepo.findGroupByName(name).
+        return groupRepo.findGroupsByName(name).
                 stream().
                 map(this::toDto).
                 toList();

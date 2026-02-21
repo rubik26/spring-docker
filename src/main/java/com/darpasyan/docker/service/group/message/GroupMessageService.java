@@ -1,15 +1,17 @@
 package com.darpasyan.docker.service.group.message;
 
 import com.darpasyan.docker.model.group.message.GroupMessage;
+import com.darpasyan.docker.model.group.message.dto.GroupMessageRequestDto;
+import com.darpasyan.docker.model.group.message.dto.GroupMessageResponseDto;
 
 import java.util.List;
 
 public interface GroupMessageService {
 
-    List<GroupMessage> getGroupMessagesByGroup(int groupId);
-    GroupMessage createGroupMessage(int groupId, GroupMessage message);
-    GroupMessage editGroupMessage(int id, GroupMessage message);
+    List<GroupMessageResponseDto> getGroupMessagesByGroup(int groupId);
+    GroupMessageResponseDto createGroupMessage(int groupId, GroupMessageRequestDto fromDto);
+    GroupMessageResponseDto editGroupMessage(int id, GroupMessageRequestDto fromDto);
     void deleteGroupMessage(int id);
 
-    List<GroupMessage> getGroupMessagesByUser(int groupId, String username);
+    List<GroupMessageResponseDto> getGroupMessagesByUser(int groupId, String username);
 }

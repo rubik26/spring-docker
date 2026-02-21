@@ -1,7 +1,6 @@
 package com.darpasyan.docker.controller;
 
 
-import com.darpasyan.docker.model.user.User;
 import com.darpasyan.docker.model.user.dto.UserRequestDto;
 import com.darpasyan.docker.model.user.dto.UserResponseDto;
 import com.darpasyan.docker.service.UserService;
@@ -32,13 +31,13 @@ public class UserController {
     }
 
     @PostMapping("createUser")
-    public UserRequestDto addUser(@RequestBody User user){
-        return service.createUser(user);
+    public UserResponseDto addUser(@RequestBody UserRequestDto fromDto){
+        return service.createUser(fromDto);
     }
 
     @PutMapping("updateUser/{id}")
-    public UserRequestDto updateUser(@PathVariable int id, @RequestBody User user){
-        return service.updateUser(id, user);
+    public UserResponseDto updateUser(@PathVariable int id, @RequestBody UserRequestDto fromDto){
+        return service.updateUser(id, fromDto);
     }
 
     @DeleteMapping("deleteUser/{id}")

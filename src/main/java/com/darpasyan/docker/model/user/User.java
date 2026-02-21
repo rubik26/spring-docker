@@ -5,6 +5,7 @@ import com.darpasyan.docker.model.group.Group;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.Objects;
 import java.util.Set;
 
 
@@ -12,7 +13,8 @@ import java.util.Set;
 @Table(name = "users")
 
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class User {
@@ -44,4 +46,23 @@ public class User {
     @ManyToMany(mappedBy = "blacklist")
     private Set<User> blockedBy;
 
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return id == user.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                '}';
+    }
 }

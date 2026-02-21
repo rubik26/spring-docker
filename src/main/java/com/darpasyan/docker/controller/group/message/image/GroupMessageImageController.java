@@ -1,6 +1,8 @@
 package com.darpasyan.docker.controller.group.message.image;
 
 import com.darpasyan.docker.model.group.message.image.GroupMessageImage;
+import com.darpasyan.docker.model.group.message.image.dto.GroupMessageImageRequestDto;
+import com.darpasyan.docker.model.group.message.image.dto.GroupMessageImageResponseDto;
 import com.darpasyan.docker.service.group.message.image.GroupMessageImageService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -19,21 +21,20 @@ public class GroupMessageImageController {
 
 
     @GetMapping("/groupimages")
-    public List<GroupMessageImage> getImages(){
+    public List<GroupMessageImageResponseDto> getImages(){
         return groupMessageImageService.getImages();
     }
 
 
     @PostMapping("uploadGroupImage/{messageId}")
-    public GroupMessageImage createImage(@PathVariable int messageId, @RequestBody MultipartFile imageFile) throws IOException {
-
-        return groupMessageImageService.createImage(messageId, imageFile);
+    public GroupMessageImageResponseDto createImage(@PathVariable int messageId, @RequestBody GroupMessageImageRequestDto fromDto) throws IOException {
+        return groupMessageImageService.createImage(messageId, fromDto);
     }
 
 
     @PutMapping("editGroupImage/{id}")
-    public GroupMessageImage editImage(@PathVariable int id, @RequestBody MultipartFile imageFile) throws IOException {
-        return groupMessageImageService.editImage(id, imageFile);
+    public GroupMessageImageResponseDto editImage(@PathVariable int id, @RequestBody GroupMessageImageRequestDto fromDto) throws IOException {
+        return groupMessageImageService.editImage(id, fromDto);
     }
 
 

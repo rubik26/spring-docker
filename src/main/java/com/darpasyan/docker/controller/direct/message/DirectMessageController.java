@@ -32,8 +32,7 @@ public class DirectMessageController {
 
     @PostMapping("directs/{directId}/createDirectMessage")
     public DirectMessageResponseDto createDirectMessage(@RequestBody DirectMessageRequestDto directMessageRequestDto, @PathVariable int directId){
-        directMessageRequestDto.setDirectId(directId);
-        return directMessageService.createDirectMessage(directMessageRequestDto);
+        return directMessageService.createDirectMessage(directMessageRequestDto, directId);
     }
 
     @PutMapping("editDirectMessage/{id}")

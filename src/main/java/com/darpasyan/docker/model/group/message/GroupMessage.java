@@ -8,7 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 
 @Entity
@@ -22,7 +22,7 @@ public class GroupMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     private  String content;
-    private LocalDate dateOfSend;
+    private LocalDateTime dateOfSend;
     private boolean isEdited;
 
     @ManyToOne
@@ -32,7 +32,4 @@ public class GroupMessage {
     @ManyToOne
     @JoinColumn(name = "group_id")
     private Group group;
-
-
-
 }

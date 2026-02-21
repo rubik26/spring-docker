@@ -64,32 +64,34 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserResponseDto> getUsers() {
 
-        List<User> users = repo.findAllWithRelations();
+        List<User> users = repo.findAll();
         return users.stream().map(this::toResponseDto).toList();
 
 
     }
 
     @Override
-    public UserRequestDto createUser(User user) {
+    public UserResponseDto createUser(UserRequestDto fromDto) {
 
-        if(user.getPassword().length() < 8){
+        if(fromDto.getPassword().length() < 8){
             throw new RuntimeException("Password should be more than 8");
         }
 
-        user.setPassword(securityConfig.passwordEncoder().encode(user.getPassword()));
+        User user = new User();
+
+        user.setPassword(securityConfig.passwordEncoder().encode(fromDto.getPassword()));
         repo.save(user);
 
-        return toRequestDto(user);
+        return toResponseDto(user);
     }
 
     @Override
-    public UserRequestDto updateUser(int id, User user) {
+    public UserResponseDto updateUser(int id, UserRequestDto fromDto) {
         User getUserForUpdate = accessTest(id);
-        getUserForUpdate.setUsername(user.getUsername());
+        getUserForUpdate.setUsername(fromDto.getUsername());
         repo.save(getUserForUpdate);
 
-        return toRequestDto(getUserForUpdate);
+        return toResponseDto(getUserForUpdate);
     }
 
     @Override
@@ -106,7 +108,9 @@ public class UserServiceImpl implements UserService {
 
         UserPrincipial authenticatedUser = (UserPrincipial) authentication.getPrincipal();
 
-        User user = repo.findByIdWithRelations(authenticatedUser.getId());
+        User user = repo.findById(authenticatedUser.getId()).orElseThrow(
+                () -> new RuntimeException("User not found")
+        );
 
         return toResponseDto(user);
     }

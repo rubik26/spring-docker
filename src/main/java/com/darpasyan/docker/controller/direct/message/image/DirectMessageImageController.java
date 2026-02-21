@@ -33,7 +33,6 @@ public class DirectMessageImageController {
         toDto.setImageName(imageFile.getOriginalFilename());
         toDto.setImageData(imageFile.getBytes());
         toDto.setImageType(imageFile.getContentType());
-        toDto.setMessageId(messageId);
 
         return directMessageImageService.createImage(messageId, toDto);
     }

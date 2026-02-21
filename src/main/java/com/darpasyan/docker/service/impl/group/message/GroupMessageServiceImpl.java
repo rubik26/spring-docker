@@ -2,18 +2,20 @@ package com.darpasyan.docker.service.impl.group.message;
 
 import com.darpasyan.docker.model.group.Group;
 import com.darpasyan.docker.model.group.message.GroupMessage;
+import com.darpasyan.docker.model.group.message.dto.GroupMessageRequestDto;
+import com.darpasyan.docker.model.group.message.dto.GroupMessageResponseDto;
 import com.darpasyan.docker.model.user.User;
 import com.darpasyan.docker.model.user.UserPrincipial;
-import com.darpasyan.docker.repo.group.message.GroupMessageRepo;
-import com.darpasyan.docker.repo.group.GroupRepo;
 import com.darpasyan.docker.repo.UserRepo;
+import com.darpasyan.docker.repo.group.GroupRepo;
+import com.darpasyan.docker.repo.group.message.GroupMessageRepo;
 import com.darpasyan.docker.service.group.message.GroupMessageService;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -25,6 +27,19 @@ public class GroupMessageServiceImpl implements GroupMessageService {
     private final UserRepo userRepo;
 
     private  final GroupRepo groupRepo;
+
+
+
+    private GroupMessageResponseDto toDto(GroupMessage groupMessage){
+        return new GroupMessageResponseDto(
+                groupMessage.getId(),
+                groupMessage.getContent(),
+                groupMessage.getDateOfSend(),
+                groupMessage.isEdited(),
+                groupMessage.getUser().getId(),
+                groupMessage.getGroup().getId()
+        );
+    }
 
 
     record AccessData(
@@ -74,33 +89,41 @@ public class GroupMessageServiceImpl implements GroupMessageService {
 
 
     @Override
-    public List<GroupMessage> getGroupMessagesByGroup(int groupId) {
+    public List<GroupMessageResponseDto> getGroupMessagesByGroup(int groupId) {
 
-        return groupMessageRepo.findGroupMessagesByGroup(getAccessToGroup(groupId).group());
+        return groupMessageRepo.findGroupMessagesByGroup(getAccessToGroup(groupId).group()).stream().
+                map(this::toDto).
+                toList();
     }
 
     @Override
-    public GroupMessage createGroupMessage(int groupId, GroupMessage message) {
+    public GroupMessageResponseDto createGroupMessage(int groupId, GroupMessageRequestDto fromDto) {
 
         AccessData data = getAccessToGroup(groupId);
 
+        GroupMessage message = new GroupMessage();
 
-
+        message.setContent(fromDto.getContent());
         message.setEdited(false);
         message.setUser(data.user());
-        message.setDateOfSend(LocalDate.now());
+        message.setDateOfSend(LocalDateTime.now());
+        message.setGroup(data.group);
 
-        return groupMessageRepo.save(message);
+         groupMessageRepo.save(message);
+
+         return toDto(message);
     }
 
     @Override
-    public GroupMessage editGroupMessage(int id, GroupMessage message) {
+    public GroupMessageResponseDto editGroupMessage(int id, GroupMessageRequestDto fromDto) {
         GroupMessage groupMessage = getAccessToMessage(id);
 
-        groupMessage.setContent(message.getContent());
+        groupMessage.setContent(fromDto.getContent());
         groupMessage.setEdited(true);
 
-        return groupMessageRepo.save(groupMessage);
+        groupMessageRepo.save(groupMessage);
+
+        return toDto(groupMessage);
 
     }
 
@@ -112,12 +135,14 @@ public class GroupMessageServiceImpl implements GroupMessageService {
     }
 
     @Override
-    public List<GroupMessage> getGroupMessagesByUser(int groupId, String username) {
+    public List<GroupMessageResponseDto> getGroupMessagesByUser(int groupId, String username) {
 
         getAccessToGroup(groupId);
 
         User sender = userRepo.findByUsername(username);
 
-        return groupMessageRepo.findMessagesByUser(sender);
+        return groupMessageRepo.findMessagesByUser(sender).stream().
+                map(this::toDto).
+                toList();
     }
 }
