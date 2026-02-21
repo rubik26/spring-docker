@@ -13,4 +13,6 @@ public interface DirectMessageService {
     DirectMessageResponseDto createDirectMessage(DirectMessageRequestDto directMessageRequestDto, int directId);
     DirectMessageResponseDto editDirectMessage(DirectMessageRequestDto directMessageRequestDto, int directId);
     void deleteDirectMessage(int id);
+
+    DirectMessageResponseDto getDirectMessageById(int directId, int id);
 }

@@ -1,6 +1,5 @@
 package com.darpasyan.docker.controller.direct.message.image;
 
-import com.darpasyan.docker.model.direct.message.image.DirectMessageImage;
 import com.darpasyan.docker.model.direct.message.image.dto.DirectMessageImageRequestDto;
 import com.darpasyan.docker.model.direct.message.image.dto.DirectMessageImageResponseDto;
 import com.darpasyan.docker.service.direct.message.image.DirectMessageImageService;
@@ -20,11 +19,16 @@ public class DirectMessageImageController {
     private final DirectMessageImageService directMessageImageService;
 
 
-    @GetMapping("directImages")
-    public List<DirectMessageImageResponseDto> getImages(){
-        return directMessageImageService.getImages();
+    @GetMapping("directs/{directId}/directImages")
+    public List<DirectMessageImageResponseDto> getImages(@PathVariable int directId){
+
+        return directMessageImageService.getImages(directId);
     }
 
+    @GetMapping("directs/{directId}/directImage/{id}")
+    public DirectMessageImageResponseDto getImageById(@PathVariable int directId, @PathVariable int id){
+        return directMessageImageService.getImageById(directId, id);
+    }
 
     @PostMapping("uploadDirectImage/{messageId}")
     public DirectMessageImageResponseDto createImage(@PathVariable int messageId, @RequestBody MultipartFile imageFile) throws IOException {

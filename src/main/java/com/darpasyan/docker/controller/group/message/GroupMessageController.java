@@ -1,7 +1,6 @@
 package com.darpasyan.docker.controller.group.message;
 
 
-import com.darpasyan.docker.model.group.message.GroupMessage;
 import com.darpasyan.docker.model.group.message.dto.GroupMessageRequestDto;
 import com.darpasyan.docker.model.group.message.dto.GroupMessageResponseDto;
 import com.darpasyan.docker.service.group.message.GroupMessageService;
@@ -47,4 +46,8 @@ public class GroupMessageController {
         return groupMessageService.getGroupMessagesByUser(groupId, username);
     }
 
+    @GetMapping("groups/{groupId}/message/{id}")
+    public GroupMessageResponseDto getGroupMessageById(@PathVariable int groupId, @PathVariable int id){
+        return groupMessageService.getGroupMessageById(groupId, id);
+    }
 }

@@ -42,4 +42,9 @@ public class GroupController {
     public List<GroupResponseDto> getGroupsByName(@PathVariable String name){
         return groupService.findGroupByName(name);
     }
+
+    @GetMapping("group/{id}")
+    public GroupResponseDto getGroupById(@PathVariable int id){
+        return groupService.getGroupById(id);
+    }
 }

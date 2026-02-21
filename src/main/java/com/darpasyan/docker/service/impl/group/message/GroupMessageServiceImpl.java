@@ -72,7 +72,7 @@ public class GroupMessageServiceImpl implements GroupMessageService {
     }
 
 
-    private GroupMessage getAccessToMessage(int id){
+    private GroupMessage getAccessToEditAndDeleteMessage(int id){
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
         UserPrincipial currentUser = (UserPrincipial) authentication.getPrincipal();
@@ -116,7 +116,7 @@ public class GroupMessageServiceImpl implements GroupMessageService {
 
     @Override
     public GroupMessageResponseDto editGroupMessage(int id, GroupMessageRequestDto fromDto) {
-        GroupMessage groupMessage = getAccessToMessage(id);
+        GroupMessage groupMessage = getAccessToEditAndDeleteMessage(id);
 
         groupMessage.setContent(fromDto.getContent());
         groupMessage.setEdited(true);
@@ -129,7 +129,7 @@ public class GroupMessageServiceImpl implements GroupMessageService {
 
     @Override
     public void deleteGroupMessage(int id) {
-        getAccessToMessage(id);
+        getAccessToEditAndDeleteMessage(id);
 
         groupMessageRepo.deleteById(id);
     }
@@ -144,5 +144,16 @@ public class GroupMessageServiceImpl implements GroupMessageService {
         return groupMessageRepo.findMessagesByUser(sender).stream().
                 map(this::toDto).
                 toList();
+    }
+
+    @Override
+    public GroupMessageResponseDto getGroupMessageById(int groupId, int messageId) {
+        getAccessToGroup(groupId);
+
+       GroupMessage message = groupMessageRepo.findById(messageId).orElseThrow(
+               () -> new RuntimeException("Message not found")
+       );
+
+        return toDto(message);
     }
 }

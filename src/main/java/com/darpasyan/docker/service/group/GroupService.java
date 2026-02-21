@@ -1,6 +1,5 @@
 package com.darpasyan.docker.service.group;
 
-import com.darpasyan.docker.model.group.Group;
 import com.darpasyan.docker.model.group.dto.GroupRequestDto;
 import com.darpasyan.docker.model.group.dto.GroupResponseDto;
 
@@ -18,4 +17,6 @@ public interface GroupService {
 
 
     List<GroupResponseDto> findGroupByName(String name);
+
+    GroupResponseDto getGroupById(int id);
 }

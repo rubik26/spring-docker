@@ -1,7 +1,6 @@
 package com.darpasyan.docker.service.direct;
 
 
-import com.darpasyan.docker.model.direct.Direct;
 import com.darpasyan.docker.model.direct.dto.DirectRequestDto;
 import com.darpasyan.docker.model.direct.dto.DirectResponseDto;
 
@@ -12,4 +11,5 @@ public interface DirectService {
     List<DirectResponseDto> getDirectByUsername(String username);
     DirectResponseDto createDirect(DirectRequestDto directRequestDto);
 
+    DirectResponseDto getDirectById(int id);
 }

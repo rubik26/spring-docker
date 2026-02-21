@@ -5,8 +5,8 @@ import com.darpasyan.docker.model.group.dto.GroupRequestDto;
 import com.darpasyan.docker.model.group.dto.GroupResponseDto;
 import com.darpasyan.docker.model.user.User;
 import com.darpasyan.docker.model.user.UserPrincipial;
-import com.darpasyan.docker.repo.group.GroupRepo;
 import com.darpasyan.docker.repo.UserRepo;
+import com.darpasyan.docker.repo.group.GroupRepo;
 import com.darpasyan.docker.service.group.GroupService;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -185,5 +185,14 @@ public class GroupServiceImpl implements GroupService {
                 stream().
                 map(this::toDto).
                 toList();
+    }
+
+    @Override
+    public GroupResponseDto getGroupById(int id) {
+        Group group = groupRepo.findById(id).orElseThrow(
+                () -> new RuntimeException("Group not found")
+        );
+
+        return toDto(group);
     }
 }

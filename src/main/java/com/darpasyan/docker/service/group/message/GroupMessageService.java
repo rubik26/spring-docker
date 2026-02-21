@@ -1,6 +1,5 @@
 package com.darpasyan.docker.service.group.message;
 
-import com.darpasyan.docker.model.group.message.GroupMessage;
 import com.darpasyan.docker.model.group.message.dto.GroupMessageRequestDto;
 import com.darpasyan.docker.model.group.message.dto.GroupMessageResponseDto;
 
@@ -14,4 +13,6 @@ public interface GroupMessageService {
     void deleteGroupMessage(int id);
 
     List<GroupMessageResponseDto> getGroupMessagesByUser(int groupId, String username);
+
+    GroupMessageResponseDto getGroupMessageById(int groupId, int messageId);
 }

@@ -1,12 +1,12 @@
 package com.darpasyan.docker.service.impl.direct;
 
 import com.darpasyan.docker.model.direct.Direct;
-import com.darpasyan.docker.model.user.User;
-import com.darpasyan.docker.model.user.UserPrincipial;
 import com.darpasyan.docker.model.direct.dto.DirectRequestDto;
 import com.darpasyan.docker.model.direct.dto.DirectResponseDto;
-import com.darpasyan.docker.repo.direct.DirectRepo;
+import com.darpasyan.docker.model.user.User;
+import com.darpasyan.docker.model.user.UserPrincipial;
 import com.darpasyan.docker.repo.UserRepo;
+import com.darpasyan.docker.repo.direct.DirectRepo;
 import com.darpasyan.docker.service.direct.DirectService;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -97,6 +97,16 @@ public class DirectServiceImpl implements DirectService {
         direct.setDateOfStart(LocalDate.now());
 
         directRepo.save(direct);
+
+        return toDto(direct);
+    }
+
+    @Override
+    public DirectResponseDto getDirectById(int id) {
+        Direct direct = directRepo.findById(id).orElseThrow(
+                () -> new RuntimeException("Direct not found")
+        );
+
 
         return toDto(direct);
     }

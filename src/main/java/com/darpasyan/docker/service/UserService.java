@@ -14,4 +14,6 @@ public interface UserService {
 
     UserResponseDto getMe();
 
+    UserResponseDto getUserById(int id);
+
 }

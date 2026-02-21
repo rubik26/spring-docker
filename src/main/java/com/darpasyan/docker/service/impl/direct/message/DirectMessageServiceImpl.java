@@ -2,13 +2,13 @@ package com.darpasyan.docker.service.impl.direct.message;
 
 import com.darpasyan.docker.model.direct.Direct;
 import com.darpasyan.docker.model.direct.message.DirectMessage;
-import com.darpasyan.docker.model.user.User;
-import com.darpasyan.docker.model.user.UserPrincipial;
 import com.darpasyan.docker.model.direct.message.dto.DirectMessageRequestDto;
 import com.darpasyan.docker.model.direct.message.dto.DirectMessageResponseDto;
-import com.darpasyan.docker.repo.direct.message.DirectMessageRepo;
-import com.darpasyan.docker.repo.direct.DirectRepo;
+import com.darpasyan.docker.model.user.User;
+import com.darpasyan.docker.model.user.UserPrincipial;
 import com.darpasyan.docker.repo.UserRepo;
+import com.darpasyan.docker.repo.direct.DirectRepo;
+import com.darpasyan.docker.repo.direct.message.DirectMessageRepo;
 import com.darpasyan.docker.service.direct.message.DirectMessageService;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -208,5 +208,16 @@ public class DirectMessageServiceImpl implements DirectMessageService {
         }
 
         directMessageRepo.deleteById(id);
+    }
+
+    @Override
+    public DirectMessageResponseDto getDirectMessageById(int directId, int id) {
+        getAccessTest(directId);
+
+        DirectMessage message = directMessageRepo.findById(id).orElseThrow(
+                () -> new RuntimeException("Message not found")
+        );
+
+        return toDto(message);
     }
 }

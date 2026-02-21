@@ -30,6 +30,12 @@ public class UserController {
         return service.getUsers();
     }
 
+
+    @GetMapping("users/{id}")
+    public UserResponseDto getUserById(@PathVariable int id){
+        return service.getUserById(id);
+    }
+
     @PostMapping("createUser")
     public UserResponseDto addUser(@RequestBody UserRequestDto fromDto){
         return service.createUser(fromDto);

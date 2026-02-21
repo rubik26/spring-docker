@@ -1,11 +1,11 @@
 package com.darpasyan.docker.service.impl;
 
 import com.darpasyan.docker.config.SecurityConfig;
+import com.darpasyan.docker.model.group.Group;
 import com.darpasyan.docker.model.user.User;
 import com.darpasyan.docker.model.user.UserPrincipial;
 import com.darpasyan.docker.model.user.dto.UserRequestDto;
 import com.darpasyan.docker.model.user.dto.UserResponseDto;
-import com.darpasyan.docker.model.group.Group;
 import com.darpasyan.docker.repo.UserRepo;
 import com.darpasyan.docker.service.UserService;
 import lombok.AllArgsConstructor;
@@ -25,7 +25,7 @@ public class UserServiceImpl implements UserService {
     private final SecurityConfig securityConfig;
 
 
-    private UserResponseDto toResponseDto(User user){
+    private UserResponseDto toDto(User user){
 
         return new UserResponseDto(
                 user.getId(),
@@ -36,13 +36,6 @@ public class UserServiceImpl implements UserService {
         );
     }
 
-
-    private UserRequestDto toRequestDto(User user){
-        return new UserRequestDto(
-                user.getUsername(),
-                user.getPassword()
-        );
-    }
 
 
 
@@ -65,7 +58,7 @@ public class UserServiceImpl implements UserService {
     public List<UserResponseDto> getUsers() {
 
         List<User> users = repo.findAll();
-        return users.stream().map(this::toResponseDto).toList();
+        return users.stream().map(this::toDto).toList();
 
 
     }
@@ -82,7 +75,7 @@ public class UserServiceImpl implements UserService {
         user.setPassword(securityConfig.passwordEncoder().encode(fromDto.getPassword()));
         repo.save(user);
 
-        return toResponseDto(user);
+        return toDto(user);
     }
 
     @Override
@@ -91,7 +84,7 @@ public class UserServiceImpl implements UserService {
         getUserForUpdate.setUsername(fromDto.getUsername());
         repo.save(getUserForUpdate);
 
-        return toResponseDto(getUserForUpdate);
+        return toDto(getUserForUpdate);
     }
 
     @Override
@@ -112,6 +105,15 @@ public class UserServiceImpl implements UserService {
                 () -> new RuntimeException("User not found")
         );
 
-        return toResponseDto(user);
+        return toDto(user);
+    }
+
+    @Override
+    public UserResponseDto getUserById(int id) {
+        User user = repo.findById(id).orElseThrow(
+               () -> new RuntimeException("User not found")
+        );
+
+       return toDto(user);
     }
 }

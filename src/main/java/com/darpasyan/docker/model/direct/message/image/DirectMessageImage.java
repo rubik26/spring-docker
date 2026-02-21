@@ -1,7 +1,6 @@
 package com.darpasyan.docker.model.direct.message.image;
 
 import com.darpasyan.docker.model.direct.message.DirectMessage;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

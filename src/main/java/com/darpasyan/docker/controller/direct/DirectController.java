@@ -1,6 +1,5 @@
 package com.darpasyan.docker.controller.direct;
 
-import com.darpasyan.docker.model.direct.Direct;
 import com.darpasyan.docker.model.direct.dto.DirectRequestDto;
 import com.darpasyan.docker.model.direct.dto.DirectResponseDto;
 import com.darpasyan.docker.service.direct.DirectService;
@@ -25,6 +24,11 @@ public class DirectController {
     @GetMapping("directs/{username}")
     public List<DirectResponseDto> getDirectsByUsername(@PathVariable String username){
         return directService.getDirectByUsername(username);
+    }
+
+    @GetMapping("direct/{id}")
+    public DirectResponseDto getDirectById(@PathVariable int id){
+        return directService.getDirectById(id);
     }
 
     @PostMapping("users/{recipientId}/createDirect")

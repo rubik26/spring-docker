@@ -1,10 +1,14 @@
 package com.darpasyan.docker.service.impl.group.message.image;
 
+import com.darpasyan.docker.model.group.Group;
 import com.darpasyan.docker.model.group.message.GroupMessage;
 import com.darpasyan.docker.model.group.message.image.GroupMessageImage;
 import com.darpasyan.docker.model.group.message.image.dto.GroupMessageImageRequestDto;
 import com.darpasyan.docker.model.group.message.image.dto.GroupMessageImageResponseDto;
+import com.darpasyan.docker.model.user.User;
 import com.darpasyan.docker.model.user.UserPrincipial;
+import com.darpasyan.docker.repo.UserRepo;
+import com.darpasyan.docker.repo.group.GroupRepo;
 import com.darpasyan.docker.repo.group.message.GroupMessageRepo;
 import com.darpasyan.docker.repo.group.message.image.GroupMessageImageRepo;
 import com.darpasyan.docker.service.group.message.image.GroupMessageImageService;
@@ -12,9 +16,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 
 @Service
@@ -23,8 +25,11 @@ public class GroupMessageImageServiceImpl implements GroupMessageImageService {
 
     private final GroupMessageImageRepo groupMessageImageRepo;
 
+    private final GroupRepo groupRepo;
 
     public final GroupMessageRepo groupMessageRepo;
+
+    private final UserRepo userRepo;
 
 
 
@@ -34,6 +39,28 @@ public class GroupMessageImageServiceImpl implements GroupMessageImageService {
                 groupMessageImage.getImageData(),
                 groupMessageImage.getMessage().getId()
         );
+    }
+
+
+    private void getAccessToGroup(int groupId){
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        UserPrincipial currentUser =
+                (UserPrincipial)  authentication.getPrincipal();
+
+        User user = userRepo.findById(currentUser.getId()).orElseThrow(
+                () -> new RuntimeException("User not found")
+        );
+
+
+        Group group = groupRepo.findById(groupId).orElseThrow(
+                () -> new RuntimeException("Group not found")
+        );
+
+        if(!group.getParticipants().contains(user)){
+            throw new RuntimeException("Access denied. You are not in the group");
+        }
     }
 
     private GroupMessageImage getAccess(int id){
@@ -54,8 +81,9 @@ public class GroupMessageImageServiceImpl implements GroupMessageImageService {
 
 
     @Override
-    public List<GroupMessageImageResponseDto> getImages() {
-        return groupMessageImageRepo.findAll().
+    public List<GroupMessageImageResponseDto> getImages(int groupId) {
+        getAccessToGroup(groupId);
+        return groupMessageImageRepo.findGroupMessageImagesByMessage_Group_Id(groupId).
                 stream().
                 map(this::toDto).
                 toList();
@@ -98,5 +126,16 @@ public class GroupMessageImageServiceImpl implements GroupMessageImageService {
        getAccess(id);
 
        groupMessageImageRepo.deleteById(id);
+    }
+
+    @Override
+    public GroupMessageImageResponseDto getImageById(int groupId, int id) {
+        getAccessToGroup(groupId);
+
+        GroupMessageImage image = groupMessageImageRepo.findById(id).orElseThrow(
+                () -> new RuntimeException("Image not found")
+        );
+
+        return toDto(image);
     }
 }
