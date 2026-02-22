@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Messenger</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            height: 100vh;
+            display: flex;
+            background: #f0f2f5;
+        }
+
+        /* LOGIN */
+        #loginScreen {
+            margin: auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            width: 300px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        #loginScreen input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+        }
+
+        #loginScreen button {
+            width: 100%;
+            padding: 10px;
+            background: #0084ff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* APP */
+        #app { display: none; width: 100%; }
+
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
+        }
+
+        .dialogs { flex: 1; overflow-y: auto; }
+
+        .dialog {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f3f3;
+        }
+
+        .dialog:hover { background: #f5f5f5; }
+        .dialog.active { background: #e6f2ff; }
+
+        .chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 16px;
+            background: white;
+            border-bottom: 1px solid #ddd;
+            font-weight: bold;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .message {
+            max-width: 60%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            font-size: 14px;
+        }
+
+        .message.left {
+            background: white;
+            border: 1px solid #ddd;
+            align-self: flex-start;
+        }
+
+        .message.right {
+            background: #0084ff;
+            color: white;
+            align-self: flex-end;
+        }
+
+        .message img {
+            max-width: 200px;
+            border-radius: 10px;
+            margin-top: 6px;
+        }
+
+        .chat-input {
+            display: flex;
+            padding: 10px;
+            background: white;
+            border-top: 1px solid #ddd;
+            gap: 8px;
+        }
+
+        .chat-input input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid #ccc;
+        }
+
+        .chat-input button {
+            padding: 8px 14px;
+            border-radius: 20px;
+            border: none;
+            background: #0084ff;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+    <h3>Login</h3>
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+</div>
+
+<!-- APP -->
+<div id="app">
+    <div class="sidebar">
+        <div class="sidebar-header">Directs</div>
+        <div class="dialogs" id="dialogs"></div>
+    </div>
+
+    <div class="chat">
+        <div class="chat-header" id="chatTitle">Выберите диалог</div>
+        <div class="messages" id="messages"></div>
+
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="Напишите сообщение...">
+            <input type="file" id="imageInput">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const BASE_URL = "http://localhost:8080/api";
+
+    let authHeader = null;
+    let currentUsername = null;
+    let currentDirectId = null;
+    let refreshInterval = null;
+
+    /* ================= LOGIN ================= */
+
+    async function login() {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        authHeader = "Basic " + btoa(username + ":" + password);
+        currentUsername = username;
+
+        const res = await fetch(BASE_URL + "/me", {
+            headers: { "Authorization": authHeader }
+        });
+
+        if (res.status === 200) {
+            document.getElementById("loginScreen").style.display = "none";
+            document.getElementById("app").style.display = "flex";
+            loadDirects();
+        } else {
+            alert("Неверный логин или пароль");
+        }
+    }
+
+    /* ================= DIRECTS ================= */
+
+    async function loadDirects() {
+        const res = await fetch(BASE_URL + "/myDirects", {
+            headers: { "Authorization": authHeader }
+        });
+
+        const directs = await res.json();
+        const container = document.getElementById("dialogs");
+        container.innerHTML = "";
+
+        directs.forEach(d => {
+            const div = document.createElement("div");
+            div.className = "dialog";
+            div.innerText = d.name || ("Direct #" + d.id);
+
+            div.onclick = () => openDirect(d.id, d.name, div);
+
+            container.appendChild(div);
+        });
+    }
+
+    /* ================= OPEN CHAT ================= */
+
+    function openDirect(id, name, element) {
+        currentDirectId = id;
+        document.getElementById("chatTitle").innerText = name;
+
+        document.querySelectorAll(".dialog")
+            .forEach(el => el.classList.remove("active"));
+        element.classList.add("active");
+
+        loadMessages();
+
+        if (refreshInterval) clearInterval(refreshInterval);
+        refreshInterval = setInterval(loadMessages, 3000);
+    }
+
+    /* ================= LOAD MESSAGES ================= */
+
+    async function loadMessages() {
+        if (!currentDirectId) return;
+
+        const res = await fetch(
+            `${BASE_URL}/directs/${currentDirectId}/messages`,
+            { headers: { "Authorization": authHeader } }
+        );
+
+        const messages = await res.json();
+        const container = document.getElementById("messages");
+        container.innerHTML = "";
+
+        messages.forEach(m => {
+            const div = document.createElement("div");
+            div.classList.add("message");
+
+            if (m.senderUsername === currentUsername) {
+                div.classList.add("right");
+            } else {
+                div.classList.add("left");
+            }
+
+            div.innerHTML = m.content || "";
+
+            if (m.imageData) {
+                const img = document.createElement("img");
+                img.src = "data:" + m.imageType + ";base64," + m.imageData;
+                div.appendChild(img);
+            }
+
+            container.appendChild(div);
+        });
+
+        container.scrollTop = container.scrollHeight;
+    }
+
+    /* ================= SEND MESSAGE ================= */
+
+    async function sendMessage() {
+        const input = document.getElementById("messageInput");
+        const imageInput = document.getElementById("imageInput");
+
+        const text = input.value;
+
+        if (!currentDirectId) return;
+
+        // 1️⃣ создаём сообщение
+        const messageRes = await fetch(
+            `${BASE_URL}/directs/${currentDirectId}/createDirectMessage`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": authHeader
+                },
+                body: JSON.stringify({ content: text })
+            }
+        );
+
+        const message = await messageRes.json();
+
+        // 2️⃣ если есть файл — загружаем
+        if (imageInput.files.length > 0) {
+            const file = imageInput.files[0];
+            const formData = new FormData();
+            formData.append("file", file);
+
+            await fetch(
+                `${BASE_URL}/uploadDirectImage/${message.id}`,
+                {
+                    method: "POST",
+                    headers: { "Authorization": authHeader },
+                    body: formData
+                }
+            );
+        }
+
+        input.value = "";
+        imageInput.value = "";
+
+        loadMessages();
+    }
+</script>
+
+</body>
+</html>

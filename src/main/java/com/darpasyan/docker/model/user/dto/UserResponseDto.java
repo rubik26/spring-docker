@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Objects;
 import java.util.Set;
 
 @Data
@@ -15,5 +16,4 @@ public class UserResponseDto {
     private Set<Integer> groupsId;
     private Set<Integer> blacklist;
     private Set<Integer> blockedBy;
-
 }

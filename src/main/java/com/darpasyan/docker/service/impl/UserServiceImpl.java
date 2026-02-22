@@ -36,10 +36,6 @@ public class UserServiceImpl implements UserService {
         );
     }
 
-
-
-
-
     private User accessTest(int id){
         Authentication auth =
                 SecurityContextHolder.getContext().getAuthentication();
@@ -54,13 +50,11 @@ public class UserServiceImpl implements UserService {
 
         return user;
     }
+
     @Override
     public List<UserResponseDto> getUsers() {
-
         List<User> users = repo.findAll();
         return users.stream().map(this::toDto).toList();
-
-
     }
 
     @Override
