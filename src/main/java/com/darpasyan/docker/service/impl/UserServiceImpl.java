@@ -1,6 +1,5 @@
 package com.darpasyan.docker.service.impl;
 
-import com.darpasyan.docker.config.SecurityConfig;
 import com.darpasyan.docker.model.group.Group;
 import com.darpasyan.docker.model.user.User;
 import com.darpasyan.docker.model.user.UserPrincipial;
@@ -11,6 +10,7 @@ import com.darpasyan.docker.service.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,7 +22,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepo repo;
 
-    private final SecurityConfig securityConfig;
+    private final PasswordEncoder passwordEncoder;
 
 
     private UserResponseDto toDto(User user){
@@ -65,11 +65,11 @@ public class UserServiceImpl implements UserService {
         }
 
         User user = new User();
+        user.setUsername(fromDto.getUsername());
+        user.setPassword(passwordEncoder.encode(fromDto.getPassword()));
+        User savedUser = repo.save(user);
 
-        user.setPassword(securityConfig.passwordEncoder().encode(fromDto.getPassword()));
-        repo.save(user);
-
-        return toDto(user);
+        return toDto(savedUser);
     }
 
     @Override
