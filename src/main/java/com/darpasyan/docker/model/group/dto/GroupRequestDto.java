@@ -16,7 +16,6 @@ public class GroupRequestDto {
     private byte[] avatar;
     private String avatarFileName;
     private String avatarFileType;
-    private String avatarName;
     private Set<Integer> moderatorsId;
     private Set<Integer> participantsId;
 }

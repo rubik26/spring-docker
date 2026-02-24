@@ -49,9 +49,9 @@ class UserServiceImplTest {
 
 
     private void mockSecurity(User user) {
-        UserPrincipial principal = new UserPrincipial(user);
+        UserPrincipial principial = new UserPrincipial(user);
         Authentication authentication = mock(Authentication.class);
-        when(authentication.getPrincipal()).thenReturn(principal);
+        when(authentication.getPrincipal()).thenReturn(principial);
 
         SecurityContext securityContext = mock(SecurityContext.class);
         when(securityContext.getAuthentication()).thenReturn(authentication);

@@ -180,7 +180,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
-    public List<GroupResponseDto> findGroupByName(String name) {
+    public List<GroupResponseDto> findGroupsByName(String name) {
         return groupRepo.findGroupsByName(name).
                 stream().
                 map(this::toDto).

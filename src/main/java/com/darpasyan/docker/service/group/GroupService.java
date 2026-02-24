@@ -16,7 +16,7 @@ public interface GroupService {
     void deleteGroup(int id);
 
 
-    List<GroupResponseDto> findGroupByName(String name);
+    List<GroupResponseDto> findGroupsByName(String name);
 
     GroupResponseDto getGroupById(int id);
 }
