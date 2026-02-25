@@ -135,8 +135,8 @@ public class GroupMessageServiceImpl implements GroupMessageService {
     }
 
     @Override
-    public List<GroupMessageResponseDto> getGroupMessagesByUser(int groupId, String username) {
-
+    public List<GroupMessageResponseDto> getGroupMessagesByUser(int groupId,
+                                                                String username) {
         getAccessToGroup(groupId);
 
         User sender = userRepo.findByUsername(username);
