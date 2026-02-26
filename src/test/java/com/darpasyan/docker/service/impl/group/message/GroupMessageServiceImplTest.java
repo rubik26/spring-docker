@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -57,6 +58,41 @@ class GroupMessageServiceImplTest {
         when(securityContext.getAuthentication()).thenReturn(authentication);
 
         SecurityContextHolder.setContext(securityContext);
+    }
+
+    record DataAccess(User user, Group group, GroupMessage groupMessage){}
+
+    private DataAccess userNotParticipant(){
+        User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
+
+        mockSecurity(user);
+
+        Group group = new Group(
+                1,
+                "Test Group",
+                "Description",
+                new byte[1],
+                "fileName",
+                "fileType",
+                LocalDate.now(),
+                user,
+                new HashSet<>(),
+                new HashSet<>()
+        );
+
+        GroupMessage groupMessage1 = new GroupMessage(
+                1,
+                "test content",
+                LocalDateTime.now(),
+                false,
+                user,
+                group
+        );
+
+        when(userRepo.findById(1)).thenReturn(Optional.of(user));
+        when(groupRepo.findById(1)).thenReturn(Optional.of(group));
+
+        return new DataAccess(user, group, groupMessage1);
     }
     @Test
     void testGetGroupMessagesByGroup() {
@@ -129,6 +165,22 @@ class GroupMessageServiceImplTest {
     }
 
     @Test
+    void testGetGroupMessagesByGroupWhenUserNotParticipant_shouldThrow(){
+        DataAccess data = userNotParticipant();
+
+        User user = data.user;
+        Group group = data.group;
+
+       RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> {
+           groupMessageService.getGroupMessagesByUser(group.getId(), user.getUsername());
+       });
+
+       assertEquals("Access denied. You are not in the group", runtimeException.getMessage());
+
+       SecurityContextHolder.clearContext();
+    }
+
+    @Test
     void testCreateGroupMessage() {
         User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
 
@@ -178,9 +230,40 @@ class GroupMessageServiceImplTest {
     }
 
     @Test
+    void testCreateGroupMessageWhenUserNotParticipant_shouldThrow(){
+       User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
+
+       mockSecurity(user);
+
+       Group group = new Group(
+                1,
+                "Test Group",
+                "Description",
+                new byte[1],
+                "fileName",
+                "fileType",
+                LocalDate.now(),
+                user,
+                new HashSet<>(),
+                new HashSet<>()
+        );
+        GroupMessageRequestDto fromDto = new GroupMessageRequestDto("try to create a message");
+
+        when(userRepo.findById(1)).thenReturn(Optional.of(user));
+        when(groupRepo.findById(1)).thenReturn(Optional.of(group));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+           groupMessageService.createGroupMessage(group.getId(), fromDto);
+        });
+
+        assertEquals("Access denied. You are not in the group", exception.getMessage());
+
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
     void testEditGroupMessage() {
         User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
-
 
         mockSecurity(user);
 
@@ -235,6 +318,46 @@ class GroupMessageServiceImplTest {
     }
 
     @Test
+    void testEdtGroupMessageWhenUserNotSenderOfMessage_shouldThrow(){
+        User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
+
+        mockSecurity(user);
+
+        Group group = new Group(
+                1,
+                "Test Group",
+                "Description",
+                new byte[1],
+                "fileName",
+                "fileType",
+                LocalDate.now(),
+                user,
+                new HashSet<>(),
+                new HashSet<>(Set.of(user))
+        );
+
+        GroupMessage groupMessage = new GroupMessage(
+                1,
+                "test content",
+                LocalDateTime.now(),
+                false,
+                new User(),
+                group
+        );
+        when(groupMessageRepo.findById(1)).thenReturn(Optional.of(groupMessage));
+
+        GroupMessageRequestDto fromDto = new GroupMessageRequestDto("try to edit");
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            groupMessageService.editGroupMessage(groupMessage.getId(), fromDto);
+        });
+
+        assertEquals("Access denied. You are not a sender of this message", exception.getMessage());
+
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
     void testDeleteGroupMessage() {
         User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
         mockSecurity(user);
@@ -265,6 +388,45 @@ class GroupMessageServiceImplTest {
 
         groupMessageService.deleteGroupMessage(1);
         verify(groupMessageRepo).deleteById(1);
+
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void testDeleteGroupMessageWhenUserNotSenderOfMessage_shouldThrow(){
+        User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
+
+        mockSecurity(user);
+
+        Group group = new Group(
+                1,
+                "Test Group",
+                "Description",
+                new byte[1],
+                "fileName",
+                "fileType",
+                LocalDate.now(),
+                user,
+                new HashSet<>(),
+                new HashSet<>(Set.of(user))
+        );
+
+        GroupMessage groupMessage = new GroupMessage(
+                1,
+                "test content",
+                LocalDateTime.now(),
+                false,
+                new User(),
+                group
+        );
+        when(groupMessageRepo.findById(1)).thenReturn(Optional.of(groupMessage));
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            groupMessageService.deleteGroupMessage(groupMessage.getId());
+        });
+
+        assertEquals("Access denied. You are not a sender of this message", exception.getMessage());
+
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -343,6 +505,21 @@ class GroupMessageServiceImplTest {
     }
 
     @Test
+    void testGetGroupMessagesByUserWhenUserNotParticipant_shouldThrow(){
+      DataAccess data = userNotParticipant();
+      User user = data.user;
+      Group group = data.group;
+
+      RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+          groupMessageService.getGroupMessagesByUser(group.getId(), user.getUsername());
+      });
+
+        assertEquals("Access denied. You are not in the group", exception.getMessage());
+
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
     void testGetGroupMessageById() {
         User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
 
@@ -388,6 +565,22 @@ class GroupMessageServiceImplTest {
         GroupMessageResponseDto result = groupMessageService.getGroupMessageById(group.getId(), groupMessage1.getId());
 
         assertEquals(toDto1, result);
+
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void testGetGroupMessageByIdWhenUserNotParticipant_shouldThrow(){
+       DataAccess data = userNotParticipant();
+
+       Group group = data.group;
+       GroupMessage groupMessage = data.groupMessage;
+
+       RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+           groupMessageService.getGroupMessageById(group.getId(), groupMessage.getId());
+       });
+
+        assertEquals("Access denied. You are not in the group", exception.getMessage());
 
         SecurityContextHolder.clearContext();
     }

@@ -67,7 +67,6 @@ public class GroupMessageServiceImpl implements GroupMessageService {
             throw new RuntimeException("Access denied. You are not in the group");
         }
 
-
         return new AccessData(user, group);
     }
 
@@ -81,7 +80,7 @@ public class GroupMessageServiceImpl implements GroupMessageService {
                 new RuntimeException("Message not found"));
 
         if(currentUser.getId() != groupMessage.getUser().getId()){
-            throw new RuntimeException("Access denied");
+            throw new RuntimeException("Access denied. You are not a sender of this message");
         }
 
         return groupMessage;
@@ -90,7 +89,7 @@ public class GroupMessageServiceImpl implements GroupMessageService {
 
     @Override
     public List<GroupMessageResponseDto> getGroupMessagesByGroup(int groupId) {
-
+        getAccessToGroup(groupId);
         return groupMessageRepo.findGroupMessagesByGroup(getAccessToGroup(groupId).group()).stream().
                 map(this::toDto).
                 toList();
@@ -135,8 +134,8 @@ public class GroupMessageServiceImpl implements GroupMessageService {
     }
 
     @Override
-    public List<GroupMessageResponseDto> getGroupMessagesByUser(int groupId,
-                                                                String username) {
+    public List<GroupMessageResponseDto> getGroupMessagesByUser(int groupId, String username) {
+
         getAccessToGroup(groupId);
 
         User sender = userRepo.findByUsername(username);

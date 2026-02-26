@@ -159,7 +159,7 @@ public class GroupServiceImpl implements GroupService {
     public void deleteGroup(int id) {
 
         Group groupForDelete = groupRepo.findById(id).orElseThrow(
-                () -> new RuntimeException("Access denied")
+                () -> new RuntimeException("Group not found")
         );
 
         Authentication authentication =

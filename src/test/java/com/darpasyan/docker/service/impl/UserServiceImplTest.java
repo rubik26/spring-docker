@@ -23,8 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -162,7 +161,6 @@ class UserServiceImplTest {
 
         assertEquals(1, result.getId());
         assertEquals("kamaro_1", result.getUsername());
-
     }
 
     @Test
@@ -234,6 +232,40 @@ class UserServiceImplTest {
     }
 
     @Test
+    void testUpdateUserByNonOwner_shouldThrow(){
+        int userId = 1;
+
+        User user = new User(1, "Rubik", "12345678",
+                new HashSet<>(),
+                new HashSet<>(),
+                new HashSet<>()
+        );
+
+        User user2 = new User(2, "Rubik2", "12345678",
+                new HashSet<>(),
+                new HashSet<>(),
+                new HashSet<>()
+        );
+        mockSecurity(user2);
+
+        UserRequestDto fromDto = new UserRequestDto("kamaro_1", "12345678");
+
+        Group group = new Group();
+        group.setId(1);
+
+
+        when(repo.findById(userId)).thenReturn(Optional.of(user));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            service.updateUser(user.getId(), fromDto);
+        });
+
+        assertEquals("Access denied", exception.getMessage());
+
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
     void deleteUser_shouldDeleteWhenUserIsOwner() {
 
         int userId = 1;
@@ -253,6 +285,41 @@ class UserServiceImplTest {
         service.deleteUser(userId);
 
         verify(repo, times(1)).deleteById(userId);
+
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void deleteUserByNonOwner_shouldThrow(){
+        int userId = 1;
+
+        User user = new User(
+                1,
+                "rubik2612",
+                "12345678",
+                new HashSet<>(),
+                new HashSet<>(),
+                new HashSet<>()
+        );
+
+        User user2 = new User(
+                2,
+                "rubik26122",
+                "12345678",
+                new HashSet<>(),
+                new HashSet<>(),
+                new HashSet<>()
+        );
+
+        mockSecurity(user2);
+
+        when(repo.findById(userId)).thenReturn(Optional.of(user));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->{
+            service.deleteUser(userId);
+        });
+
+        assertEquals("Access denied", exception.getMessage());
 
         SecurityContextHolder.clearContext();
     }

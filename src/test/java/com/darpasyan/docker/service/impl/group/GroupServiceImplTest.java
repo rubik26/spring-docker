@@ -337,6 +337,39 @@ class GroupServiceImplTest {
     }
 
     @Test
+    void testDeleteGroupByNonAdmin_shouldThrow(){
+        User admin = new User(1, "Admin", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
+        User user = new User(2, "user", "pass2", new HashSet<>(), new HashSet<>(), new HashSet<>());
+
+        mockSecurity(user);
+
+        Group group = new Group(
+                1,
+                "Test Group",
+                "Description",
+                new byte[1],
+                "fileName",
+                "fileType",
+                LocalDate.now(),
+                admin,
+                new HashSet<>(),
+                new HashSet<>()
+        );
+
+        admin.setGroups(Set.of(group));
+        user.setGroups(Set.of(group));
+
+        when(userRepo.findById(2)).thenReturn(Optional.of(user));
+        when(groupRepo.findById(1)).thenReturn(Optional.of(group));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->{
+            groupService.deleteGroup(group.getId());
+        });
+
+        assertEquals("Access denied", exception.getMessage());
+    }
+
+    @Test
     void testFindGroupsByName() {
         String groupName = "Test Group";
 
