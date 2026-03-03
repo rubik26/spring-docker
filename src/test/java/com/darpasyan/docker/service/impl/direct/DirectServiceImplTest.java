@@ -63,7 +63,7 @@ class DirectServiceImplTest {
     }
 
     @Test
-    void getDirectsByCurrentUser() {
+    void testGetDirectsByCurrentUser() {
         User sender = userBuilder.build();
         User recipient = userBuilder.build();
         User recipient2 = userBuilder.build();
@@ -106,7 +106,7 @@ class DirectServiceImplTest {
     }
 
     @Test
-    void getDirectByUsername() {
+    void testGetDirectByUsername() {
         User sender = userBuilder.build();
         User recipient = userBuilder.
                 setUsername("Test Username").
@@ -137,7 +137,7 @@ class DirectServiceImplTest {
     }
 
     @Test
-    void createDirect() {
+    void testCreateDirect() {
         User sender = userBuilder.
                 setUsername("User Test").
                 build();
@@ -173,7 +173,7 @@ class DirectServiceImplTest {
     }
 
     @Test
-    void getDirectById() {
+    void testGetDirectById() {
         User sender = userBuilder.build();
         User recipient = userBuilder.build();
 
