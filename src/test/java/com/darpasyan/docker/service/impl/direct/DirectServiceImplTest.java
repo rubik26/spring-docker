@@ -103,6 +103,8 @@ class DirectServiceImplTest {
         List<DirectResponseDto> result = directService.getDirectsByCurrentUser();
 
         assertEquals(List.of(toDto, toDto2), result);
+
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -134,6 +136,8 @@ class DirectServiceImplTest {
         List<DirectResponseDto> result = directService.getDirectsByUsername("Test Username");
 
         assertEquals(List.of(toDto), result);
+
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -170,6 +174,8 @@ class DirectServiceImplTest {
         assertEquals(1, result.getId());
         assertEquals(sender.getId(), result.getSenderId());
         assertEquals(recipient.getId(), result.getRecipientId());
+
+        SecurityContextHolder.clearContext();
     }
 
     @Test
