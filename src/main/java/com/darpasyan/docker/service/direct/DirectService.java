@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface DirectService {
     List<DirectResponseDto> getDirectsByCurrentUser();
-    List<DirectResponseDto> getDirectByUsername(String username);
+    List<DirectResponseDto> getDirectsByUsername(String username);
     DirectResponseDto createDirect(DirectRequestDto directRequestDto);
 
     DirectResponseDto getDirectById(int id);

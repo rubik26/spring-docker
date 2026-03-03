@@ -1,5 +1,7 @@
 package com.darpasyan.docker.service.impl.group;
 
+import com.darpasyan.docker.builders.group.impl.GroupBuilderImpl;
+import com.darpasyan.docker.builders.user.impl.UserBuilderImpl;
 import com.darpasyan.docker.model.group.Group;
 import com.darpasyan.docker.model.group.dto.GroupRequestDto;
 import com.darpasyan.docker.model.group.dto.GroupResponseDto;
@@ -7,6 +9,7 @@ import com.darpasyan.docker.model.user.User;
 import com.darpasyan.docker.model.user.UserPrincipial;
 import com.darpasyan.docker.repo.UserRepo;
 import com.darpasyan.docker.repo.group.GroupRepo;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -40,7 +43,14 @@ class GroupServiceImplTest {
     @Captor
     ArgumentCaptor<Group> groupCaptor;
 
+    UserBuilderImpl userBuilder;
+    GroupBuilderImpl groupBuilder;
 
+    @BeforeEach
+    void init(){
+        userBuilder = new UserBuilderImpl();
+        groupBuilder = new GroupBuilderImpl();
+    }
 
     private void mockSecurity(User user){
         UserPrincipial principial = new UserPrincipial(user);
@@ -58,41 +68,32 @@ class GroupServiceImplTest {
     @Test
     void testGetGroups() {
 
-        User admin1 = new User(1, "Admin1", "12345678", new HashSet<>(), new HashSet<>(), new HashSet<>());
-        User admin2 = new User(2, "Admin2", "12345678", new HashSet<>(), new HashSet<>(), new HashSet<>());
+        byte[] avatar = new byte[1];
 
-        Group group1 = new Group(
-            1, "Test Group", "Test description",
-                new byte[1],
-            "Test file name",
-            "Test file type",
-                LocalDate.now(),
-                new User(),
-                new HashSet<>(),
-                new HashSet<>()
-        );
-        Group group2 = new Group(
-                2, "Test Group2", "Test description2",
-                new byte[2],
-                "Test file name2",
-                "Test file type2",
-                LocalDate.now(),
-                new User(),
-                new HashSet<>(),
-                new HashSet<>()
-        );
+        User admin1 = userBuilder.build();
+        User admin2 = userBuilder.build();
 
-        admin1.setGroups(Set.of(group1));
-        admin2.setGroups(Set.of(group2));
+        Group group1 = groupBuilder.
+                setName("Default Group").
+                setDescription("Default description").
+                setAvatar(avatar).
+                setDateOfCreate(LocalDate.now()).
+                setAdmin(admin1).
+                build();
+        Group group2 = groupBuilder.
+                setName("Default Group 1").
+                setDescription("Default description 1").
+                setAvatar(avatar).
+                setDateOfCreate(LocalDate.now()).
+                setAdmin(admin2).
+                build();
 
-        group1.setAdmin(admin1);
-        group2.setAdmin(admin2);
 
         GroupResponseDto toDto = new GroupResponseDto(
                 1,
-                "Test Group",
-                "Test description",
-                new byte[1],
+                "Default Group",
+                "Default description",
+                avatar,
                 LocalDate.now(),
                 1,
                 new HashSet<>(),
@@ -101,9 +102,9 @@ class GroupServiceImplTest {
 
         GroupResponseDto toDto2 = new GroupResponseDto(
                 2,
-                "Test Group2",
-                "Test description2",
-                new byte[2],
+                "Default Group 1",
+                "Default description 1",
+                avatar,
                 LocalDate.now(),
                 2,
                 new HashSet<>(),
@@ -120,11 +121,12 @@ class GroupServiceImplTest {
 
     @Test
     void testCreateGroup() {
-        User admin1 = new User(1, "Admin1", "12345678", new HashSet<>(), new HashSet<>(), new HashSet<>());
+
+        User admin = userBuilder.build();
 
         byte[] avatar = new byte[1];
 
-        mockSecurity(admin1);
+        mockSecurity(admin);
 
         GroupRequestDto fromDto = new GroupRequestDto(
             "Test Group",
@@ -136,7 +138,7 @@ class GroupServiceImplTest {
                 new HashSet<>()
         );
 
-        when(userRepo.findById(1)).thenReturn(Optional.of(admin1));
+        when(userRepo.findById(1)).thenReturn(Optional.of(admin));
         when(groupRepo.save(any(Group.class))).thenAnswer(
                 invocationOnMock -> {
                     Group g = invocationOnMock.getArgument(0);
@@ -160,7 +162,7 @@ class GroupServiceImplTest {
         assertEquals("Test file type", capturedGroup.getAvatarFileType());
         assertEquals(1, capturedGroup.getAdmin().getId());
         assertEquals(Set.of(), capturedGroup.getModerators());
-        assertEquals(Set.of(admin1), capturedGroup.getParticipants());
+        assertEquals(Set.of(admin), capturedGroup.getParticipants());
 
         assertEquals("Test Group", result.getName());
         assertEquals("Test description Group", result.getDescription());
@@ -179,23 +181,16 @@ class GroupServiceImplTest {
 
         byte[] avatar = new byte[1];
 
-        User admin1 = new User(1, "Admin1", "12345678", new HashSet<>(), new HashSet<>(), new HashSet<>());
+        User admin = userBuilder.build();
 
-        User user = new User(2, "New Participant", "12345678NewUserInTheGroup", new HashSet<>(), new HashSet<>(), new HashSet<>());
+        User user = userBuilder.build();
 
-        mockSecurity(admin1);
+        mockSecurity(admin);
 
-        Group group = new Group(1, "Test Group", "Test description",
-                avatar,
-                "Test file name",
-                "Test file type",
-                LocalDate.now(),
-                admin1,
-                new HashSet<>(),
-                new HashSet<>(Set.of(admin1))
-        );
-
-        admin1.setGroups(Set.of(group));
+        Group group = groupBuilder.
+                  setAvatar(avatar).
+                    setAdmin(admin).
+                    build();
 
         GroupRequestDto fromDto = new GroupRequestDto(
                 "Test Group Update",
@@ -209,7 +204,7 @@ class GroupServiceImplTest {
 
         user.setGroups(Set.of(group));
 
-        when(userRepo.findById(1)).thenReturn(Optional.of(admin1));
+        when(userRepo.findById(1)).thenReturn(Optional.of(admin));
         when(userRepo.findById(2)).thenReturn(Optional.of(user));
         when(groupRepo.findById(groupId)).thenReturn(Optional.of(group));
 
@@ -237,7 +232,7 @@ class GroupServiceImplTest {
         assertNotEquals("Test file type", capturedGroup.getAvatarFileType());
         assertEquals(1, capturedGroup.getAdmin().getId());
         assertEquals(Set.of(user), capturedGroup.getModerators());
-        assertEquals(Set.of(admin1, user), capturedGroup.getParticipants());
+        assertEquals(Set.of(admin, user), capturedGroup.getParticipants());
 
         assertEquals("Test Group Update", result.getName());
         assertEquals("Test description Group Update", result.getDescription());
@@ -252,25 +247,13 @@ class GroupServiceImplTest {
 
     @Test
     void testUpdateGroupModeratorsByNonAdmin_shouldThrow() {
+        User admin = userBuilder.build();
+        User moderator = userBuilder.build();
 
-        User admin = new User(1, "Admin", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
-        User moderator = new User(2, "Moderator", "pass2", new HashSet<>(), new HashSet<>(), new HashSet<>());
-
-        Group group = new Group(
-                1,
-                "Test Group",
-                "Description",
-                new byte[1],
-                "fileName",
-                "fileType",
-                LocalDate.now(),
-                admin,
-                new HashSet<>(Set.of(moderator)),
-                new HashSet<>()
-        );
-
-        admin.setGroups(Set.of(group));
-        moderator.setGroups(Set.of(group));
+        Group group = groupBuilder.
+                setAdmin(admin).
+                setModerators(Set.of(moderator)).
+                build();
 
         GroupRequestDto fromDto = new GroupRequestDto(
                 "Test Group",
@@ -296,9 +279,8 @@ class GroupServiceImplTest {
 
         mockSecurity(moderator);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            groupService.updateGroup(1, fromDto);
-        });
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                groupService.updateGroup(1, fromDto));
 
         assertEquals("Access denied. You are not an admin", exception.getMessage());
 
@@ -307,22 +289,14 @@ class GroupServiceImplTest {
 
     @Test
     void testDeleteGroup() {
-        User admin = new User(1, "Admin", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
+
+        User admin = userBuilder.build();
 
         mockSecurity(admin);
 
-        Group group = new Group(
-                1,
-                "Test Group",
-                "Description",
-                new byte[1],
-                "fileName",
-                "fileType",
-                LocalDate.now(),
-                admin,
-                new HashSet<>(),
-                new HashSet<>()
-        );
+        Group group = groupBuilder.
+                setAdmin(admin).
+                build();
 
         when(userRepo.findById(1)).thenReturn(Optional.of(admin));
         when(groupRepo.findById(1)).thenReturn(Optional.of(group));
@@ -338,23 +312,15 @@ class GroupServiceImplTest {
 
     @Test
     void testDeleteGroupByNonAdmin_shouldThrow(){
-        User admin = new User(1, "Admin", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
-        User user = new User(2, "user", "pass2", new HashSet<>(), new HashSet<>(), new HashSet<>());
+        User admin = userBuilder.build();
+        User user = userBuilder.build();
 
         mockSecurity(user);
 
-        Group group = new Group(
-                1,
-                "Test Group",
-                "Description",
-                new byte[1],
-                "fileName",
-                "fileType",
-                LocalDate.now(),
-                admin,
-                new HashSet<>(),
-                new HashSet<>()
-        );
+        Group group = groupBuilder.
+                setAdmin(admin).
+                setModerators(Set.of(user)).
+                build();
 
         admin.setGroups(Set.of(group));
         user.setGroups(Set.of(group));
@@ -362,67 +328,60 @@ class GroupServiceImplTest {
         when(userRepo.findById(2)).thenReturn(Optional.of(user));
         when(groupRepo.findById(1)).thenReturn(Optional.of(group));
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () ->{
-            groupService.deleteGroup(group.getId());
-        });
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                groupService.deleteGroup(group.getId()));
 
         assertEquals("Access denied", exception.getMessage());
     }
 
     @Test
     void testFindGroupsByName() {
+
         String groupName = "Test Group";
+        byte[] avatar = new byte[1];
 
-        User admin1 = new User(1, "Admin1", "12345678", new HashSet<>(), new HashSet<>(), new HashSet<>());
-        User admin2 = new User(2, "Admin2", "12345678", new HashSet<>(), new HashSet<>(), new HashSet<>());
+        User admin1 = userBuilder.build();
+        User admin2 = userBuilder.build();
 
-        Group group1 = new Group(
-                1, "Test Group", "Test description",
-                new byte[1],
-                "Test file name",
-                "Test file type",
-                LocalDate.now(),
-                new User(),
-                new HashSet<>(),
-                new HashSet<>()
-        );
-        Group group2 = new Group(
-                2, "Test Group", "Test description2",
-                new byte[2],
-                "Test file name2",
-                "Test file type2",
-                LocalDate.now(),
-                new User(),
-                new HashSet<>(),
-                new HashSet<>()
-        );
+        Group group1 = groupBuilder.
+                setName("Test Group").
+                setDescription("Test description").
+                setAvatar(avatar).
+                setDateOfCreate(LocalDate.now()).
+                setAdmin(admin1).
+                setParticipants(Set.of(admin1)).
+                build();
 
-        admin1.setGroups(Set.of(group1));
-        admin2.setGroups(Set.of(group2));
+        Group group2 = groupBuilder.
+                setName("Test Group").
+                setDescription("Test description 2").
+                setAvatar(avatar).
+                setDateOfCreate(LocalDate.now()).
+                setAdmin(admin2).
+                setParticipants(Set.of(admin2)).
+                build();
 
-        group1.setAdmin(admin1);
-        group2.setAdmin(admin2);
 
         GroupResponseDto toDto = new GroupResponseDto(
                 1,
                 "Test Group",
                 "Test description",
-                new byte[1],
+                avatar,
                 LocalDate.now(),
                 1,
                 new HashSet<>(),
-                new HashSet<>()
+                new HashSet<>(Set.of(admin1.getId()))
         );
 
         GroupResponseDto toDto2 = new GroupResponseDto(
                 2,
                 "Test Group",
-                "Test description2",
-                new byte[2],
+                "Test description 2",
+                avatar,
                 LocalDate.now(),
                 2,
                 new HashSet<>(),
-                new HashSet<>()
+                new HashSet<>(Set.of(admin2.getId()))
         );
 
 
@@ -435,36 +394,37 @@ class GroupServiceImplTest {
 
     @Test
     void testGetGroupsById() {
+
+        byte[] avatar = new byte[1];
+
         int groupId = 1;
 
-        User admin1 = new User(1, "Admin1", "12345678", new HashSet<>(), new HashSet<>(), new HashSet<>());
+        User admin = userBuilder.build();
 
-        Group group1 = new Group(
-                1, "Test Group", "Test description",
-                new byte[1],
-                "Test file name",
-                "Test file type",
-                LocalDate.now(),
-                new User(),
-                new HashSet<>(),
-                new HashSet<>()
-        );
+        Group group = groupBuilder.
+                setName("Test Group").
+                setDescription("Test description").
+                setAvatar(avatar).
+                setDateOfCreate(LocalDate.now()).
+                setAdmin(admin).
+                setParticipants(Set.of(admin)).
+                build();
 
-        admin1.setGroups(Set.of(group1));
-        group1.setAdmin(admin1);
+
+        admin.setGroups(Set.of(group));
 
         GroupResponseDto toDto = new GroupResponseDto(
                 1,
                 "Test Group",
                 "Test description",
-                new byte[1],
+                avatar,
                 LocalDate.now(),
                 1,
                 new HashSet<>(),
-                new HashSet<>()
+                new HashSet<>(Set.of(admin.getId()))
         );
 
-        when(groupRepo.findById(groupId)).thenReturn(Optional.of(group1));
+        when(groupRepo.findById(groupId)).thenReturn(Optional.of(group));
 
         GroupResponseDto result = groupService.getGroupById(groupId);
 

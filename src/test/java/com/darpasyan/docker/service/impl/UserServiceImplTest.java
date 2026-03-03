@@ -1,11 +1,14 @@
 package com.darpasyan.docker.service.impl;
 
+import com.darpasyan.docker.builders.group.impl.GroupBuilderImpl;
+import com.darpasyan.docker.builders.user.impl.UserBuilderImpl;
 import com.darpasyan.docker.model.group.Group;
 import com.darpasyan.docker.model.user.User;
 import com.darpasyan.docker.model.user.UserPrincipial;
 import com.darpasyan.docker.model.user.dto.UserRequestDto;
 import com.darpasyan.docker.model.user.dto.UserResponseDto;
 import com.darpasyan.docker.repo.UserRepo;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -33,19 +36,24 @@ class UserServiceImplTest {
     @Mock
     private UserRepo repo;
 
-
     @Mock
     private PasswordEncoder passwordEncoder;
-
-
-    @Captor
-    ArgumentCaptor<User> userCaptor;
-
 
     @InjectMocks
     private  UserServiceImpl service;
 
+    @Captor
+    ArgumentCaptor<User> userCaptor;
 
+    private UserBuilderImpl userBuilder;
+    private GroupBuilderImpl groupBuilder;
+
+    @BeforeEach
+    void init(){
+        userBuilder = new UserBuilderImpl();
+        groupBuilder = new GroupBuilderImpl();
+
+    }
 
     private void mockSecurity(User user) {
         UserPrincipial principial = new UserPrincipial(user);
@@ -61,36 +69,30 @@ class UserServiceImplTest {
 
     @Test
     void testGetUsers(){
-        Group group1 = new Group();
-        Group group2 = new Group();
 
-        group1.setId(1);
-        group2.setId(2);
+        Group group = groupBuilder.build();
 
-        User user1 = new User(1, "Joe", "joe-biden-2020",
-                new HashSet<>(Set.of(group1)),
-                new HashSet<>(),
-                new HashSet<>()
-        );
+        User user1 = userBuilder.
+                setUsername("Test User").
+                setGroups(Set.of(group)).
+                build();
+        User user2 = userBuilder.
+                setUsername("Test User 2").
+                setGroups(Set.of(group)).
+                blackList(Set.of(user1)).
+                build();
 
-        User user2 = new User(2, "Donald", "MAGA2024",
-                new HashSet<>(Set.of(group1, group2)),
-                new HashSet<>(),
-                new HashSet<>()
-        );
+        user1.setBlockedBy(Set.of(user2));
 
 
-        user1.setBlockedBy(new HashSet<>(Set.of(user2)));
-        user2.setBlacklist(new HashSet<>(Set.of(user1)));
-
-        UserResponseDto toDto1 = new UserResponseDto(1, "Joe",
+        UserResponseDto toDto1 = new UserResponseDto(1, "Test User",
                 new HashSet<>(Set.of(1)),
                 new HashSet<>(),
                 new HashSet<>(Set.of(2))
         );
 
-        UserResponseDto toDto2 = new UserResponseDto(2, "Donald",
-                new HashSet<>(Set.of(1, 2)),
+        UserResponseDto toDto2 = new UserResponseDto(2, "Test User 2",
+                new HashSet<>(Set.of(1)),
                 new HashSet<>(Set.of(1)),
                 new HashSet<>()
 
@@ -107,18 +109,14 @@ class UserServiceImplTest {
     void testGetUserById() {
         int userId = 1;
 
-        Group group = new Group();
-
-        group.setId(1);
-
-        User user = new User(1, "Rubik", "12345678",
-                new HashSet<>(Set.of(group)),
-                new HashSet<>(),
-                new HashSet<>()
-        );
+        Group group = groupBuilder.build();
+        User user = userBuilder.
+                setUsername("Test User").
+                setGroups(Set.of(group)).
+                build();
 
 
-        UserResponseDto toDto = new UserResponseDto(1, "Rubik",
+        UserResponseDto toDto = new UserResponseDto(1, "Test User",
                 new HashSet<>(Set.of(1)),
                 new HashSet<>(),
                 new HashSet<>());
@@ -165,12 +163,7 @@ class UserServiceImplTest {
 
     @Test
     void testGetMe(){
-        User user = new User(
-               1, "Admin", "admin2007",
-                new HashSet<>(),
-                new HashSet<>(),
-                new HashSet<>()
-        );
+        User user = userBuilder.build();
 
         mockSecurity(user);
 
@@ -190,18 +183,11 @@ class UserServiceImplTest {
     void testUpdateUser_shouldUpdateWhenUserIsOwner() {
         int userId = 1;
 
-        User user = new User(1, "Rubik", "12345678",
-                new HashSet<>(),
-                new HashSet<>(),
-                new HashSet<>()
-        );
+        User user = userBuilder.setPassword("12345678").build();
 
         mockSecurity(user);
 
         UserRequestDto fromDto = new UserRequestDto("kamaro_1", "12345678");
-
-        Group group = new Group();
-        group.setId(1);
 
 
         when(repo.findById(userId)).thenReturn(Optional.of(user));
@@ -235,30 +221,20 @@ class UserServiceImplTest {
     void testUpdateUserByNonOwner_shouldThrow(){
         int userId = 1;
 
-        User user = new User(1, "Rubik", "12345678",
-                new HashSet<>(),
-                new HashSet<>(),
-                new HashSet<>()
-        );
+        User user = userBuilder.build();
 
-        User user2 = new User(2, "Rubik2", "12345678",
-                new HashSet<>(),
-                new HashSet<>(),
-                new HashSet<>()
-        );
+        User user2 = userBuilder.build();
+        user2.setId(2);
         mockSecurity(user2);
 
         UserRequestDto fromDto = new UserRequestDto("kamaro_1", "12345678");
 
-        Group group = new Group();
-        group.setId(1);
-
 
         when(repo.findById(userId)).thenReturn(Optional.of(user));
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            service.updateUser(user.getId(), fromDto);
-        });
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                service.updateUser(user.getId(), fromDto));
+
 
         assertEquals("Access denied", exception.getMessage());
 
@@ -270,14 +246,7 @@ class UserServiceImplTest {
 
         int userId = 1;
 
-        User user = new User(
-                1,
-                "rubik2612",
-                "12345678",
-                new HashSet<>(),
-                new HashSet<>(),
-                new HashSet<>()
-        );
+        User user = userBuilder.build();
         mockSecurity(user);
 
         when(repo.findById(userId)).thenReturn(Optional.of(user));
@@ -293,31 +262,17 @@ class UserServiceImplTest {
     void deleteUserByNonOwner_shouldThrow(){
         int userId = 1;
 
-        User user = new User(
-                1,
-                "rubik2612",
-                "12345678",
-                new HashSet<>(),
-                new HashSet<>(),
-                new HashSet<>()
-        );
+        User user = userBuilder.build();
 
-        User user2 = new User(
-                2,
-                "rubik26122",
-                "12345678",
-                new HashSet<>(),
-                new HashSet<>(),
-                new HashSet<>()
-        );
+        User user2 = userBuilder.build();
+        user2.setId(2);
 
         mockSecurity(user2);
 
         when(repo.findById(userId)).thenReturn(Optional.of(user));
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () ->{
-            service.deleteUser(userId);
-        });
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                service.deleteUser(userId));
 
         assertEquals("Access denied", exception.getMessage());
 

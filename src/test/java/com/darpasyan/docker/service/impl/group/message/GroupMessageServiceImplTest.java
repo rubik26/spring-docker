@@ -1,5 +1,8 @@
 package com.darpasyan.docker.service.impl.group.message;
 
+import com.darpasyan.docker.builders.group.impl.GroupBuilderImpl;
+import com.darpasyan.docker.builders.groupMessage.impl.GroupMessageBuilderImpl;
+import com.darpasyan.docker.builders.user.impl.UserBuilderImpl;
 import com.darpasyan.docker.model.group.Group;
 import com.darpasyan.docker.model.group.message.GroupMessage;
 import com.darpasyan.docker.model.group.message.dto.GroupMessageRequestDto;
@@ -9,6 +12,7 @@ import com.darpasyan.docker.model.user.UserPrincipial;
 import com.darpasyan.docker.repo.UserRepo;
 import com.darpasyan.docker.repo.group.GroupRepo;
 import com.darpasyan.docker.repo.group.message.GroupMessageRepo;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -20,15 +24,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -50,6 +51,18 @@ class GroupMessageServiceImplTest {
     @Captor
     private ArgumentCaptor<GroupMessage> groupMessageCaptor;
 
+
+    private UserBuilderImpl userBuilder;
+    private GroupBuilderImpl groupBuilder;
+    private GroupMessageBuilderImpl groupMessageBuilder;
+
+    @BeforeEach
+    void init(){
+        userBuilder = new UserBuilderImpl();
+        groupBuilder = new GroupBuilderImpl();
+        groupMessageBuilder = new GroupMessageBuilderImpl();
+    }
+
     private void mockSecurity(User user){
         UserPrincipial userPrincipial = new UserPrincipial(user);
         Authentication authentication = mock(Authentication.class);
@@ -63,31 +76,26 @@ class GroupMessageServiceImplTest {
     record DataAccess(User user, Group group, GroupMessage groupMessage){}
 
     private DataAccess userNotParticipant(){
-        User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
+        UserBuilderImpl userBuilder = new UserBuilderImpl();
+        GroupBuilderImpl groupBuilder = new GroupBuilderImpl();
+        GroupMessageBuilderImpl groupMessageBuilder = new GroupMessageBuilderImpl();
+
+
+        User user = userBuilder.
+                setUsername("Test user").
+                build();
+
 
         mockSecurity(user);
 
-        Group group = new Group(
-                1,
-                "Test Group",
-                "Description",
-                new byte[1],
-                "fileName",
-                "fileType",
-                LocalDate.now(),
-                user,
-                new HashSet<>(),
-                new HashSet<>()
-        );
+        Group group = groupBuilder.
+                setName("Test Group").
+                setParticipants(Set.of()).
+                build();
 
-        GroupMessage groupMessage1 = new GroupMessage(
-                1,
-                "test content",
-                LocalDateTime.now(),
-                false,
-                user,
-                group
-        );
+        GroupMessage groupMessage1 = groupMessageBuilder.
+                setContent("Test message").
+                build();
 
         when(userRepo.findById(1)).thenReturn(Optional.of(user));
         when(groupRepo.findById(1)).thenReturn(Optional.of(group));
@@ -96,46 +104,39 @@ class GroupMessageServiceImplTest {
     }
     @Test
     void testGetGroupMessagesByGroup() {
-        User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
 
+        User user = userBuilder.
+                setUsername("Test user").
+                build();
+
+        System.out.println(user.getId());
         LocalDateTime dateOfSend = LocalDateTime.now();
 
         mockSecurity(user);
 
-        Group group = new Group(
-                1,
-                "Test Group",
-                "Description",
-                new byte[1],
-                "fileName",
-                "fileType",
-                LocalDate.now(),
-                user,
-                new HashSet<>(),
-                new HashSet<>(Set.of(user))
-        );
+        Group group = groupBuilder.
+                setName("Test group").
+                setParticipants(Set.of(user)).
+                build();
 
-        GroupMessage groupMessage1 = new GroupMessage(
-                1,
-                "test content",
-                dateOfSend,
-                false,
-                user,
-                group
-        );
-
-        GroupMessage groupMessage2 = new GroupMessage(
-                2,
-                "test content2",
-                dateOfSend,
-                false,
-                user,
-                group
-        );
+        GroupMessage groupMessage1 = groupMessageBuilder.
+                setContent("Test content").
+                setDateOfSend(dateOfSend).
+                setIsEdited(false).
+                setSender(user).
+                setGroup(group).
+                build();
+        GroupMessage groupMessage2 = groupMessageBuilder.
+                setContent("Test content 2").
+                setDateOfSend(dateOfSend).
+                setIsEdited(false).
+                setSender(user).
+                setGroup(group).
+                build();
 
         GroupMessageResponseDto toDto1 = new GroupMessageResponseDto(
                 1,
-                "test content",
+                "Test content",
                 dateOfSend,
                 false,
                 user.getId(),
@@ -144,7 +145,7 @@ class GroupMessageServiceImplTest {
 
         GroupMessageResponseDto toDto2 = new GroupMessageResponseDto(
                 2,
-                "test content2",
+                "Test content 2",
                 dateOfSend,
                 false,
                 user.getId(),
@@ -171,9 +172,8 @@ class GroupMessageServiceImplTest {
         User user = data.user;
         Group group = data.group;
 
-       RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> {
-           groupMessageService.getGroupMessagesByUser(group.getId(), user.getUsername());
-       });
+       RuntimeException runtimeException = assertThrows(RuntimeException.class, () ->
+               groupMessageService.getGroupMessagesByUser(group.getId(), user.getUsername()));
 
        assertEquals("Access denied. You are not in the group", runtimeException.getMessage());
 
@@ -182,22 +182,14 @@ class GroupMessageServiceImplTest {
 
     @Test
     void testCreateGroupMessage() {
-        User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
+        User user = userBuilder.
+                setUsername("Test User").build();
 
         mockSecurity(user);
 
-        Group group = new Group(
-                1,
-                "Test Group",
-                "Description",
-                new byte[1],
-                "fileName",
-                "fileType",
-                LocalDate.now(),
-                user,
-                new HashSet<>(),
-                new HashSet<>(Set.of(user))
-        );
+        Group group =
+                groupBuilder.setParticipants(Set.of(user)).build();
+
 
         GroupMessageRequestDto fromDto = new GroupMessageRequestDto("test content");
 
@@ -219,42 +211,33 @@ class GroupMessageServiceImplTest {
        assertEquals("test content", capturedMessage.getContent());
        assertEquals(group, capturedMessage.getGroup());
        assertEquals(user, capturedMessage.getUser());
-       assertEquals(false, capturedMessage.isEdited());
+       assertFalse(capturedMessage.isEdited());
 
        assertEquals("test content", result.getContent());
        assertEquals(group.getId(), result.getGroupId());
        assertEquals(user.getId(), result.getSenderId());
-       assertEquals(false, result.isEdited());
+       assertFalse(result.isEdited());
 
        SecurityContextHolder.clearContext();
     }
 
     @Test
     void testCreateGroupMessageWhenUserNotParticipant_shouldThrow(){
-       User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
+       User user = userBuilder.build();
 
        mockSecurity(user);
 
-       Group group = new Group(
-                1,
-                "Test Group",
-                "Description",
-                new byte[1],
-                "fileName",
-                "fileType",
-                LocalDate.now(),
-                user,
-                new HashSet<>(),
-                new HashSet<>()
-        );
+       Group group = groupBuilder.
+               setParticipants(Set.of()).
+               build();
+
         GroupMessageRequestDto fromDto = new GroupMessageRequestDto("try to create a message");
 
         when(userRepo.findById(1)).thenReturn(Optional.of(user));
         when(groupRepo.findById(1)).thenReturn(Optional.of(group));
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-           groupMessageService.createGroupMessage(group.getId(), fromDto);
-        });
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                groupMessageService.createGroupMessage(group.getId(), fromDto));
 
         assertEquals("Access denied. You are not in the group", exception.getMessage());
 
@@ -263,31 +246,18 @@ class GroupMessageServiceImplTest {
 
     @Test
     void testEditGroupMessage() {
-        User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
+        User user = userBuilder.build();
 
         mockSecurity(user);
 
-        Group group = new Group(
-                1,
-                "Test Group",
-                "Description",
-                new byte[1],
-                "fileName",
-                "fileType",
-                LocalDate.now(),
-                user,
-                new HashSet<>(),
-                new HashSet<>(Set.of(user))
-        );
+        Group group = groupBuilder.
+                setParticipants(Set.of(user)).
+                build();
 
-        GroupMessage groupMessage1 = new GroupMessage(
-                1,
-                "test content",
-                LocalDateTime.now(),
-                false,
-                user,
-                group
-        );
+        GroupMessage groupMessage1 = groupMessageBuilder.
+                                        setSender(user).
+                                        setGroup(group).
+                                        build();
 
         GroupMessageRequestDto fromDto = new GroupMessageRequestDto("test content update");
         when(groupMessageRepo.findById(1)).thenReturn(Optional.of(groupMessage1));
@@ -307,50 +277,37 @@ class GroupMessageServiceImplTest {
         assertEquals("test content update", capturedMessage.getContent());
         assertEquals(group, capturedMessage.getGroup());
         assertEquals(user, capturedMessage.getUser());
-        assertEquals(true, capturedMessage.isEdited());
+        assertTrue(capturedMessage.isEdited());
 
         assertEquals("test content update", result.getContent());
         assertEquals(group.getId(), result.getGroupId());
         assertEquals(user.getId(), result.getSenderId());
-        assertEquals(true, result.isEdited());
+        assertTrue(result.isEdited());
 
         SecurityContextHolder.clearContext();
     }
 
     @Test
     void testEdtGroupMessageWhenUserNotSenderOfMessage_shouldThrow(){
-        User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
+        User user = userBuilder.build();
 
         mockSecurity(user);
 
-        Group group = new Group(
-                1,
-                "Test Group",
-                "Description",
-                new byte[1],
-                "fileName",
-                "fileType",
-                LocalDate.now(),
-                user,
-                new HashSet<>(),
-                new HashSet<>(Set.of(user))
-        );
+        Group group = groupBuilder.
+                setParticipants(Set.of(user)).
+                build();
 
-        GroupMessage groupMessage = new GroupMessage(
-                1,
-                "test content",
-                LocalDateTime.now(),
-                false,
-                new User(),
-                group
-        );
+        GroupMessage groupMessage = groupMessageBuilder.
+                setSender(new User()).
+                setGroup(group).
+                build();
+
         when(groupMessageRepo.findById(1)).thenReturn(Optional.of(groupMessage));
 
         GroupMessageRequestDto fromDto = new GroupMessageRequestDto("try to edit");
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            groupMessageService.editGroupMessage(groupMessage.getId(), fromDto);
-        });
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                groupMessageService.editGroupMessage(groupMessage.getId(), fromDto));
 
         assertEquals("Access denied. You are not a sender of this message", exception.getMessage());
 
@@ -359,32 +316,20 @@ class GroupMessageServiceImplTest {
 
     @Test
     void testDeleteGroupMessage() {
-        User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
+        User user = userBuilder.build();
+
         mockSecurity(user);
 
-        Group group = new Group(
-                1,
-                "Test Group",
-                "Description",
-                new byte[1],
-                "fileName",
-                "fileType",
-                LocalDate.now(),
-                user,
-                new HashSet<>(),
-                new HashSet<>(Set.of(user))
-        );
+        Group group = groupBuilder.
+                setParticipants(Set.of(user)).
+                build();
 
-        GroupMessage groupMessage1 = new GroupMessage(
-                1,
-                "test content",
-                LocalDateTime.now(),
-                false,
-                user,
-                group
-        );
+        GroupMessage groupMessage = groupMessageBuilder.
+                setSender(user).
+                setGroup(group).
+                build();
 
-        when(groupMessageRepo.findById(1)).thenReturn(Optional.of(groupMessage1));
+        when(groupMessageRepo.findById(1)).thenReturn(Optional.of(groupMessage));
 
         groupMessageService.deleteGroupMessage(1);
         verify(groupMessageRepo).deleteById(1);
@@ -394,35 +339,23 @@ class GroupMessageServiceImplTest {
 
     @Test
     void testDeleteGroupMessageWhenUserNotSenderOfMessage_shouldThrow(){
-        User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
+        User user = userBuilder.build();
 
         mockSecurity(user);
 
-        Group group = new Group(
-                1,
-                "Test Group",
-                "Description",
-                new byte[1],
-                "fileName",
-                "fileType",
-                LocalDate.now(),
-                user,
-                new HashSet<>(),
-                new HashSet<>(Set.of(user))
-        );
+        Group group = groupBuilder.
+                setParticipants(Set.of(user)).
+                build();
 
-        GroupMessage groupMessage = new GroupMessage(
-                1,
-                "test content",
-                LocalDateTime.now(),
-                false,
-                new User(),
-                group
-        );
+        GroupMessage groupMessage = groupMessageBuilder.
+                setSender(new User()).
+                setGroup(group).
+                build();
+
         when(groupMessageRepo.findById(1)).thenReturn(Optional.of(groupMessage));
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            groupMessageService.deleteGroupMessage(groupMessage.getId());
-        });
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                groupMessageService.deleteGroupMessage(groupMessage.getId()));
 
         assertEquals("Access denied. You are not a sender of this message", exception.getMessage());
 
@@ -431,42 +364,32 @@ class GroupMessageServiceImplTest {
 
     @Test
     void testGetGroupMessagesByUser() {
-        User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
+
+        User user = userBuilder.build();
 
         LocalDateTime dateOfSend = LocalDateTime.now();
 
         mockSecurity(user);
 
-        Group group = new Group(
-                1,
-                "Test Group",
-                "Description",
-                new byte[1],
-                "fileName",
-                "fileType",
-                LocalDate.now(),
-                user,
-                new HashSet<>(),
-                new HashSet<>(Set.of(user))
-        );
+        Group group = groupBuilder.
+                setParticipants(Set.of(user)).
+                build();
 
-        GroupMessage groupMessage1 = new GroupMessage(
-                1,
-                "test content",
-                dateOfSend,
-                false,
-                user,
-                group
-        );
+        GroupMessage groupMessage1 = groupMessageBuilder.
+                setContent("test content").
+                setDateOfSend(dateOfSend).
+                setIsEdited(false).
+                setSender(user).
+                setGroup(group).
+                build();
 
-        GroupMessage groupMessage2 = new GroupMessage(
-                2,
-                "test content2",
-                dateOfSend,
-                false,
-                user,
-                group
-        );
+        GroupMessage groupMessage2 = groupMessageBuilder.
+                setContent("test content2").
+                setDateOfSend(dateOfSend).
+                setIsEdited(false).
+                setSender(user).
+                setGroup(group).
+                build();
 
 
         GroupMessageResponseDto toDto1 = new GroupMessageResponseDto(
@@ -510,9 +433,8 @@ class GroupMessageServiceImplTest {
       User user = data.user;
       Group group = data.group;
 
-      RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-          groupMessageService.getGroupMessagesByUser(group.getId(), user.getUsername());
-      });
+      RuntimeException exception = assertThrows(RuntimeException.class, () ->
+              groupMessageService.getGroupMessagesByUser(group.getId(), user.getUsername()));
 
         assertEquals("Access denied. You are not in the group", exception.getMessage());
 
@@ -521,33 +443,24 @@ class GroupMessageServiceImplTest {
 
     @Test
     void testGetGroupMessageById() {
-        User user = new User(1, "usertest", "pass", new HashSet<>(), new HashSet<>(), new HashSet<>());
+        User user = userBuilder.build();
 
         LocalDateTime dateOfSend = LocalDateTime.now();
 
         mockSecurity(user);
 
-        Group group = new Group(
-                1,
-                "Test Group",
-                "Description",
-                new byte[1],
-                "fileName",
-                "fileType",
-                LocalDate.now(),
-                user,
-                new HashSet<>(),
-                new HashSet<>(Set.of(user))
-        );
+        Group group = groupBuilder.
+                setParticipants(Set.of(user)).
+                build();
 
-        GroupMessage groupMessage1 = new GroupMessage(
-                1,
-                "test content",
-                dateOfSend,
-                false,
-                user,
-                group
-        );
+        GroupMessage groupMessage1 = groupMessageBuilder.
+                setContent("test content").
+                setDateOfSend(dateOfSend).
+                setIsEdited(false).
+                setSender(user).
+                setGroup(group).
+                build();
+
 
         GroupMessageResponseDto toDto1 = new GroupMessageResponseDto(
                 1,
@@ -576,9 +489,8 @@ class GroupMessageServiceImplTest {
        Group group = data.group;
        GroupMessage groupMessage = data.groupMessage;
 
-       RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-           groupMessageService.getGroupMessageById(group.getId(), groupMessage.getId());
-       });
+       RuntimeException exception = assertThrows(RuntimeException.class, () ->
+               groupMessageService.getGroupMessageById(group.getId(), groupMessage.getId()));
 
         assertEquals("Access denied. You are not in the group", exception.getMessage());
 

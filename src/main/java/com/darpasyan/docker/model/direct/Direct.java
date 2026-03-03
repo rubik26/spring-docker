@@ -19,7 +19,6 @@ public class Direct {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-
     @ManyToOne
     @JoinColumn(name = "sender_id")
     private User sender;
@@ -28,9 +27,5 @@ public class Direct {
     @JoinColumn(name = "recipient_id")
     private User recipient;
 
-
-
     private LocalDate dateOfStart;
-
-
 }

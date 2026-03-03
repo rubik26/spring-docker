@@ -21,9 +21,7 @@ import java.util.List;
 public class DirectServiceImpl implements DirectService {
 
     private final DirectRepo directRepo;
-
     private final UserRepo userRepo;
-
 
     private DirectResponseDto toDto(Direct direct){
         return new DirectResponseDto(
@@ -35,7 +33,6 @@ public class DirectServiceImpl implements DirectService {
         );
     }
 
-
     @Override
     public List<DirectResponseDto> getDirectsByCurrentUser() {
         Authentication authentication =
@@ -46,12 +43,12 @@ public class DirectServiceImpl implements DirectService {
 
         return directRepo.myDirects(currentUser.getId())
                 .stream()
-                .map(this::toDto
-                        ).toList();
+                .map(this::toDto).
+                toList();
     }
 
     @Override
-    public List<DirectResponseDto> getDirectByUsername(String username) {
+    public List<DirectResponseDto> getDirectsByUsername(String username) {
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
 
@@ -80,10 +77,10 @@ public class DirectServiceImpl implements DirectService {
                 (UserPrincipial) authentication.getPrincipal();
 
         User me = userRepo.findById(currentUser.getId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Your account not found"));
 
         User receiver = userRepo.findById(directRequestDto.getRecipientId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Recipient not found"));
 
         Direct existing = directRepo.findBetweenUsers(me, receiver);
 
@@ -103,10 +100,10 @@ public class DirectServiceImpl implements DirectService {
 
     @Override
     public DirectResponseDto getDirectById(int id) {
+
         Direct direct = directRepo.findById(id).orElseThrow(
                 () -> new RuntimeException("Direct not found")
         );
-
 
         return toDto(direct);
     }

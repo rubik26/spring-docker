@@ -23,7 +23,7 @@ public class DirectController {
 
     @GetMapping("directs/{username}")
     public List<DirectResponseDto> getDirectsByUsername(@PathVariable String username){
-        return directService.getDirectByUsername(username);
+        return directService.getDirectsByUsername(username);
     }
 
     @GetMapping("direct/{id}")

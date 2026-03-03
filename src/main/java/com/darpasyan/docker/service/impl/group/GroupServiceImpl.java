@@ -109,10 +109,8 @@ public class GroupServiceImpl implements GroupService {
        );
 
         if(user.getId() != groupForUpdate.getAdmin().getId() && !groupForUpdate.getModerators().contains(user)){
-            throw new  RuntimeException("Access denied");
+            throw new  RuntimeException("Access denied. You are not an admin or moderator");
         }
-
-
 
         groupForUpdate.setName(fromDto.getName());
         groupForUpdate.setDescription(fromDto.getDescription());

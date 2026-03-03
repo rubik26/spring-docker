@@ -8,6 +8,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DirectRequestDto {
-    private int directId;
     private int recipientId;
 }
