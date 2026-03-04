@@ -101,9 +101,18 @@ public class DirectServiceImpl implements DirectService {
     @Override
     public DirectResponseDto getDirectById(int id) {
 
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        UserPrincipial currentUser = (UserPrincipial) authentication.getPrincipal();
+
         Direct direct = directRepo.findById(id).orElseThrow(
                 () -> new RuntimeException("Direct not found")
         );
+
+        if(currentUser.getId() != direct.getSender().getId() && currentUser.getId() != direct.getRecipient().getId()){
+            throw new RuntimeException("Access denied. You are not a member of this direct");
+        }
 
         return toDto(direct);
     }

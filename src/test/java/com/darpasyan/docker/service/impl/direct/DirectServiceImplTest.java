@@ -183,7 +183,7 @@ class DirectServiceImplTest {
         User sender = userBuilder.build();
         User recipient = userBuilder.build();
 
-        //mockSecurity(sender);
+        mockSecurity(sender);
 
         Direct direct = directBuilder.
                 setSender(sender).
